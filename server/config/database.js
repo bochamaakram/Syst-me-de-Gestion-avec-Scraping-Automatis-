@@ -1,19 +1,15 @@
-const { Pool } = require('pg');
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
 
-// Support both DATABASE_URL (Supabase/Vercel) and individual env vars (local dev)
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
-});
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
-// Test connection
-pool.connect()
-    .then(client => {
-        console.log('✅ Database connected successfully');
-        client.release();
-    })
-    .catch(err => {
-        console.error('❌ Database connection failed:', err.message);
-    });
+if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ Missing SUPABASE_URL or SUPABASE_KEY in .env');
+} else {
+    console.log('✅ Supabase client initialized');
+}
 
-module.exports = pool;
+const supabase = createClient(supabaseUrl || '', supabaseKey || '');
+
+module.exports = supabase;

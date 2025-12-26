@@ -1,86 +1,66 @@
-const db = require('../config/db');
+const supabase = require('../config/database');
 
-/**
- * Get quiz for a course
- */
 exports.getQuiz = async (req, res) => {
     try {
-        const { courseId } = req.params;
+        const { data: quizzes, error } = await supabase
+            .from('course_quizzes')
+            .select('*')
+            .eq('course_id', req.params.courseId);
 
-        // Get quiz
-        const [quizzes] = await db.query(
-            'SELECT * FROM course_quizzes WHERE course_id = ?',
-            [courseId]
-        );
-
-        if (!quizzes.length) {
+        if (error) throw error;
+        if (!quizzes || quizzes.length === 0) {
             return res.json({ success: true, quiz: null });
         }
 
         const quiz = quizzes[0];
 
-        // Get questions (don't include correct_index for security)
-        const [questions] = await db.query(
-            'SELECT id, question, options, order_index FROM quiz_questions WHERE quiz_id = ? ORDER BY order_index',
-            [quiz.id]
-        );
+        const { data: questions } = await supabase
+            .from('quiz_questions')
+            .select('id, question, options, order_index')
+            .eq('quiz_id', quiz.id)
+            .order('order_index', { ascending: true });
 
-        // Parse options JSON
-        quiz.questions = questions.map(q => ({
+        // Parse options from JSON if needed
+        const parsedQuestions = questions?.map(q => ({
             ...q,
             options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
-        }));
+        })) || [];
 
-        res.json({ success: true, quiz });
+        res.json({ success: true, quiz: { ...quiz, questions: parsedQuestions } });
     } catch (err) {
         console.error('Get quiz error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
 
-/**
- * Submit quiz answers
- */
 exports.submitQuiz = async (req, res) => {
-    const connection = await db.getConnection();
     try {
-        await connection.beginTransaction();
-
         const { quizId } = req.params;
-        const { answers } = req.body; // { questionId: selectedIndex, ... }
+        const { answers } = req.body;
         const userId = req.user.id;
 
-        // Get quiz info
-        const [quizzes] = await connection.query(
-            'SELECT * FROM course_quizzes WHERE id = ?',
-            [quizId]
-        );
-        if (!quizzes.length) {
-            await connection.rollback();
+        const { data: quizzes } = await supabase.from('course_quizzes').select('*').eq('id', quizId);
+        if (!quizzes || quizzes.length === 0) {
             return res.status(404).json({ success: false, message: 'Quiz not found' });
         }
 
         const quiz = quizzes[0];
 
-        // Check if enrolled
-        const [purchases] = await connection.query(
-            'SELECT * FROM purchases WHERE user_id = ? AND course_id = ?',
-            [userId, quiz.course_id]
-        );
-        if (!purchases.length) {
-            await connection.rollback();
-            return res.status(403).json({ success: false, message: 'Not enrolled in this course' });
+        // Check enrollment
+        const { data: purchases } = await supabase
+            .from('purchases')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('course_id', quiz.course_id);
+
+        if (!purchases || purchases.length === 0) {
+            return res.status(403).json({ success: false, message: 'Must be enrolled to take quiz' });
         }
 
-        // Get all questions with correct answers
-        const [questions] = await connection.query(
-            'SELECT id, correct_index FROM quiz_questions WHERE quiz_id = ?',
-            [quizId]
-        );
-
-        if (!questions.length) {
-            await connection.rollback();
-            return res.status(400).json({ success: false, message: 'Quiz has no questions' });
+        // Get questions with correct answers
+        const { data: questions } = await supabase.from('quiz_questions').select('*').eq('quiz_id', quizId);
+        if (!questions || questions.length === 0) {
+            return res.status(400).json({ success: false, message: 'No questions in quiz' });
         }
 
         // Calculate score
@@ -95,127 +75,88 @@ exports.submitQuiz = async (req, res) => {
         const passed = score >= quiz.passing_score;
 
         // Record attempt
-        await connection.query(
-            'INSERT INTO quiz_attempts (user_id, quiz_id, course_id, score, passed, answers) VALUES (?, ?, ?, ?, ?, ?)',
-            [userId, quizId, quiz.course_id, score, passed, JSON.stringify(answers)]
-        );
+        await supabase.from('quiz_attempts').insert({
+            user_id: userId, quiz_id: parseInt(quizId), course_id: quiz.course_id,
+            score, passed, answers: JSON.stringify(answers)
+        });
 
-        // If passed, update purchase
+        // Update purchase if passed
         if (passed) {
-            await connection.query(
-                'UPDATE purchases SET quiz_passed = TRUE, quiz_score = ? WHERE user_id = ? AND course_id = ?',
-                [score, userId, quiz.course_id]
-            );
+            await supabase.from('purchases')
+                .update({ quiz_passed: true, quiz_score: score })
+                .eq('user_id', userId)
+                .eq('course_id', quiz.course_id);
         }
 
-        await connection.commit();
-
         res.json({
-            success: true,
-            score,
-            passed,
-            passingScore: quiz.passing_score,
-            correct,
-            total: questions.length,
+            success: true, score, passed,
+            correct, total: questions.length,
             message: passed ? 'Congratulations! You passed!' : `You need ${quiz.passing_score}% to pass. Try again!`
         });
     } catch (err) {
-        await connection.rollback();
         console.error('Submit quiz error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
-    } finally {
-        connection.release();
     }
 };
 
-/**
- * Get user's quiz attempts for a course
- */
 exports.getAttempts = async (req, res) => {
     try {
-        const { courseId } = req.params;
-        const [attempts] = await db.query(
-            'SELECT * FROM quiz_attempts WHERE user_id = ? AND course_id = ? ORDER BY completed_at DESC',
-            [req.user.id, courseId]
-        );
-        res.json({ success: true, attempts });
+        const { data: quizzes } = await supabase.from('course_quizzes').select('id').eq('course_id', req.params.courseId);
+        if (!quizzes || quizzes.length === 0) {
+            return res.json({ success: true, attempts: [] });
+        }
+
+        const { data: attempts, error } = await supabase
+            .from('quiz_attempts')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .eq('quiz_id', quizzes[0].id)
+            .order('completed_at', { ascending: false });
+
+        if (error) throw error;
+        res.json({ success: true, attempts: attempts || [] });
     } catch (err) {
         console.error('Get attempts error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
 
-/**
- * Create or update quiz for a course (teacher/admin only)
- */
 exports.saveQuiz = async (req, res) => {
-    const connection = await db.getConnection();
     try {
-        await connection.beginTransaction();
-
         const { courseId } = req.params;
-        const { title, passingScore, questions } = req.body;
-        const userId = req.user.id;
+        const { title, passing_score, questions } = req.body;
 
-        // Check if user owns the course or is admin
-        const [courses] = await connection.query(
-            'SELECT user_id FROM courses WHERE id = ?',
-            [courseId]
-        );
-        if (!courses.length) {
-            await connection.rollback();
-            return res.status(404).json({ success: false, message: 'Course not found' });
-        }
-
-        const [userRole] = await connection.query('SELECT role FROM users WHERE id = ?', [userId]);
-        if (courses[0].user_id !== userId && userRole[0].role !== 'super_admin') {
-            await connection.rollback();
-            return res.status(403).json({ success: false, message: 'Not authorized' });
-        }
-
-        // Check if quiz exists
-        const [existing] = await connection.query(
-            'SELECT id FROM course_quizzes WHERE course_id = ?',
-            [courseId]
-        );
+        // Check existing quiz
+        const { data: existing } = await supabase.from('course_quizzes').select('id').eq('course_id', courseId);
 
         let quizId;
-        if (existing.length) {
-            // Update existing quiz
+        if (existing && existing.length > 0) {
             quizId = existing[0].id;
-            await connection.query(
-                'UPDATE course_quizzes SET title = ?, passing_score = ? WHERE id = ?',
-                [title || 'Final Quiz', passingScore || 85, quizId]
-            );
-            // Delete old questions
-            await connection.query('DELETE FROM quiz_questions WHERE quiz_id = ?', [quizId]);
+            await supabase.from('course_quizzes').update({ title, passing_score }).eq('id', quizId);
+            await supabase.from('quiz_questions').delete().eq('quiz_id', quizId);
         } else {
-            // Create new quiz
-            const [result] = await connection.query(
-                'INSERT INTO course_quizzes (course_id, title, passing_score) VALUES (?, ?, ?)',
-                [courseId, title || 'Final Quiz', passingScore || 85]
-            );
-            quizId = result.insertId;
+            const { data } = await supabase.from('course_quizzes')
+                .insert({ course_id: parseInt(courseId), title, passing_score })
+                .select('id')
+                .single();
+            quizId = data.id;
         }
 
         // Insert questions
-        if (questions && questions.length) {
-            for (let i = 0; i < questions.length; i++) {
-                const q = questions[i];
-                await connection.query(
-                    'INSERT INTO quiz_questions (quiz_id, question, options, correct_index, order_index) VALUES (?, ?, ?, ?, ?)',
-                    [quizId, q.question, JSON.stringify(q.options), q.correctIndex, i]
-                );
-            }
+        if (questions && questions.length > 0) {
+            const questionsData = questions.map((q, i) => ({
+                quiz_id: quizId,
+                question: q.question,
+                options: JSON.stringify(q.options),
+                correct_index: q.correct_index,
+                order_index: i
+            }));
+            await supabase.from('quiz_questions').insert(questionsData);
         }
 
-        await connection.commit();
-        res.json({ success: true, quizId, message: 'Quiz saved successfully' });
+        res.json({ success: true, message: 'Quiz saved', quizId });
     } catch (err) {
-        await connection.rollback();
         console.error('Save quiz error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
-    } finally {
-        connection.release();
     }
 };

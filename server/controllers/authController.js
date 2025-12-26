@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const supabase = require('../config/database');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -11,22 +11,24 @@ exports.register = async (req, res) => {
         }
 
         // Check if user exists
-        const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
-        if (existing.length > 0) {
+        const { data: existing } = await supabase.from('users').select('id').eq('email', email);
+        if (existing && existing.length > 0) {
             return res.status(400).json({ success: false, message: 'Email already registered' });
         }
 
         // Hash password and create user
         const hashedPassword = await bcrypt.hash(password, 10);
-        const [result] = await db.query(
-            'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-            [username, email, hashedPassword]
-        );
+        const { data, error } = await supabase
+            .from('users')
+            .insert({ username, email, password: hashedPassword, role: 'learner', points: 0 })
+            .select('id, username, email, role')
+            .single();
 
-        const user = { id: result.insertId, username, email, role: 'learner' };
-        const token = jwt.sign({ id: user.id, email }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION || '7d' });
+        if (error) throw error;
 
-        res.status(201).json({ success: true, user, token });
+        const token = jwt.sign({ id: data.id, email }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION || '7d' });
+
+        res.status(201).json({ success: true, user: data, token });
     } catch (err) {
         console.error('Register error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
@@ -41,8 +43,9 @@ exports.login = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email and password required' });
         }
 
-        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-        if (users.length === 0) {
+        const { data: users, error } = await supabase.from('users').select('*').eq('email', email);
+        if (error) throw error;
+        if (!users || users.length === 0) {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
@@ -52,9 +55,7 @@ exports.login = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
-        const { getEffectiveRole } = require('./usersController');
-        const effectiveRole = await getEffectiveRole(user.id);
-
+        const effectiveRole = user.id === 1 ? 'super_admin' : user.role;
         const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION || '7d' });
 
         res.json({
@@ -70,17 +71,22 @@ exports.login = async (req, res) => {
 
 exports.getMe = async (req, res) => {
     try {
-        const [users] = await db.query('SELECT id, username, email, role FROM users WHERE id = ?', [req.user.id]);
-        if (users.length === 0) {
+        const { data: users, error } = await supabase
+            .from('users')
+            .select('id, username, email, role, points')
+            .eq('id', req.user.id);
+
+        if (error) throw error;
+        if (!users || users.length === 0) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        const { getEffectiveRole } = require('./usersController');
-        const effectiveRole = await getEffectiveRole(req.user.id);
-        const user = { ...users[0], role: effectiveRole };
+        const user = users[0];
+        user.role = user.id === 1 ? 'super_admin' : user.role;
 
         res.json({ success: true, user });
     } catch (err) {
+        console.error('GetMe error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };

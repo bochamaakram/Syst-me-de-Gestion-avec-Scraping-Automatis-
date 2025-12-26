@@ -1,39 +1,32 @@
-const db = require('../config/db');
+const supabase = require('../config/database');
 
-/**
- * Get user's progress for a course
- */
 exports.getCourseProgress = async (req, res) => {
     try {
         const { courseId } = req.params;
         const userId = req.user.id;
 
-        // Get total lessons and completed lessons
-        const [stats] = await db.query(`
-            SELECT 
-                (SELECT COUNT(*) FROM course_lessons WHERE course_id = ?) as total_lessons,
-                (SELECT COUNT(*) FROM lesson_progress WHERE user_id = ? AND course_id = ? AND completed = TRUE) as completed_lessons
-        `, [courseId, userId, courseId]);
+        // Get all lessons for course
+        const { data: lessons } = await supabase
+            .from('course_lessons')
+            .select('id')
+            .eq('course_id', courseId);
 
-        // Get completed lesson IDs
-        const [completed] = await db.query(`
-            SELECT lesson_id FROM lesson_progress 
-            WHERE user_id = ? AND course_id = ? AND completed = TRUE
-        `, [userId, courseId]);
+        // Get completed lessons
+        const { data: progress } = await supabase
+            .from('lesson_progress')
+            .select('lesson_id')
+            .eq('user_id', userId)
+            .eq('course_id', courseId)
+            .eq('completed', true);
 
-        const completedIds = completed.map(r => r.lesson_id);
-        const total = stats[0].total_lessons;
-        const done = stats[0].completed_lessons;
-        const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
+        const completedLessonIds = progress?.map(p => p.lesson_id) || [];
+        const totalLessons = lessons?.length || 0;
+        const completedCount = completedLessonIds.length;
+        const percentComplete = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
         res.json({
             success: true,
-            progress: {
-                total: total,
-                completed: done,
-                percentage: percentage,
-                completedLessonIds: completedIds
-            }
+            progress: { completedLessonIds, totalLessons, completedCount, percentComplete }
         });
     } catch (err) {
         console.error('Get progress error:', err);
@@ -41,102 +34,86 @@ exports.getCourseProgress = async (req, res) => {
     }
 };
 
-/**
- * Mark lesson as completed
- */
 exports.markLessonComplete = async (req, res) => {
     try {
         const { lessonId } = req.params;
         const userId = req.user.id;
 
-        // Get lesson's course_id
-        const [lesson] = await db.query('SELECT course_id FROM course_lessons WHERE id = ?', [lessonId]);
-        if (!lesson.length) {
+        // Get lesson to find course_id
+        const { data: lessons } = await supabase.from('course_lessons').select('course_id').eq('id', lessonId);
+        if (!lessons || lessons.length === 0) {
             return res.status(404).json({ success: false, message: 'Lesson not found' });
         }
 
-        const courseId = lesson[0].course_id;
+        const courseId = lessons[0].course_id;
 
-        // Check if user is enrolled
-        const [enrollment] = await db.query(
-            'SELECT id FROM purchases WHERE user_id = ? AND course_id = ?',
-            [userId, courseId]
-        );
-        if (!enrollment.length) {
-            return res.status(403).json({ success: false, message: 'Not enrolled in this course' });
+        // Check enrollment
+        const { data: purchases } = await supabase.from('purchases').select('id').eq('user_id', userId).eq('course_id', courseId);
+        if (!purchases || purchases.length === 0) {
+            return res.status(403).json({ success: false, message: 'Must be enrolled' });
         }
 
         // Upsert progress
-        await db.query(`
-            INSERT INTO lesson_progress (user_id, lesson_id, course_id, completed, completed_at)
-            VALUES (?, ?, ?, TRUE, NOW())
-            ON DUPLICATE KEY UPDATE completed = TRUE, completed_at = NOW()
-        `, [userId, lessonId, courseId]);
+        const { data: existing } = await supabase.from('lesson_progress').select('id').eq('user_id', userId).eq('lesson_id', lessonId);
 
-        // Calculate new progress
-        const [stats] = await db.query(`
-            SELECT 
-                (SELECT COUNT(*) FROM course_lessons WHERE course_id = ?) as total,
-                (SELECT COUNT(*) FROM lesson_progress WHERE user_id = ? AND course_id = ? AND completed = TRUE) as done
-        `, [courseId, userId, courseId]);
-
-        const percentage = stats[0].total > 0 ? Math.round((stats[0].done / stats[0].total) * 100) : 0;
+        if (existing && existing.length > 0) {
+            await supabase.from('lesson_progress')
+                .update({ completed: true, completed_at: new Date().toISOString() })
+                .eq('id', existing[0].id);
+        } else {
+            await supabase.from('lesson_progress').insert({
+                user_id: userId, lesson_id: parseInt(lessonId), course_id: courseId,
+                completed: true, completed_at: new Date().toISOString()
+            });
+        }
 
         // Update purchase progress
-        await db.query('UPDATE purchases SET progress = ? WHERE user_id = ? AND course_id = ?',
-            [percentage, userId, courseId]);
+        const { data: allLessons } = await supabase.from('course_lessons').select('id').eq('course_id', courseId);
+        const { data: completedProg } = await supabase.from('lesson_progress')
+            .select('id').eq('user_id', userId).eq('course_id', courseId).eq('completed', true);
 
-        res.json({
-            success: true,
-            message: 'Lesson marked as complete',
-            progress: percentage
-        });
+        const progress = allLessons?.length > 0
+            ? Math.round((completedProg?.length || 0) / allLessons.length * 100)
+            : 0;
+
+        await supabase.from('purchases').update({ progress }).eq('user_id', userId).eq('course_id', courseId);
+
+        res.json({ success: true, message: 'Lesson marked complete' });
     } catch (err) {
         console.error('Mark complete error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
 
-/**
- * Mark lesson as incomplete
- */
 exports.markLessonIncomplete = async (req, res) => {
     try {
         const { lessonId } = req.params;
         const userId = req.user.id;
 
-        // Get lesson's course_id
-        const [lesson] = await db.query('SELECT course_id FROM course_lessons WHERE id = ?', [lessonId]);
-        if (!lesson.length) {
+        const { data: lessons } = await supabase.from('course_lessons').select('course_id').eq('id', lessonId);
+        if (!lessons || lessons.length === 0) {
             return res.status(404).json({ success: false, message: 'Lesson not found' });
         }
 
-        const courseId = lesson[0].course_id;
+        const courseId = lessons[0].course_id;
 
-        // Update progress
-        await db.query(`
-            UPDATE lesson_progress SET completed = FALSE, completed_at = NULL
-            WHERE user_id = ? AND lesson_id = ?
-        `, [userId, lessonId]);
-
-        // Calculate new progress
-        const [stats] = await db.query(`
-            SELECT 
-                (SELECT COUNT(*) FROM course_lessons WHERE course_id = ?) as total,
-                (SELECT COUNT(*) FROM lesson_progress WHERE user_id = ? AND course_id = ? AND completed = TRUE) as done
-        `, [courseId, userId, courseId]);
-
-        const percentage = stats[0].total > 0 ? Math.round((stats[0].done / stats[0].total) * 100) : 0;
+        await supabase.from('lesson_progress')
+            .update({ completed: false, completed_at: null })
+            .eq('user_id', userId)
+            .eq('lesson_id', lessonId);
 
         // Update purchase progress
-        await db.query('UPDATE purchases SET progress = ? WHERE user_id = ? AND course_id = ?',
-            [percentage, userId, courseId]);
+        const { data: allLessons } = await supabase.from('course_lessons').select('id').eq('course_id', courseId);
+        const { data: completedProg } = await supabase.from('lesson_progress')
+            .select('id').eq('user_id', userId).eq('course_id', courseId).eq('completed', true);
 
-        res.json({
-            success: true,
-            message: 'Lesson marked as incomplete',
-            progress: percentage
-        });
+        const progress = allLessons?.length > 0
+            ? Math.round((completedProg?.length || 0) / allLessons.length * 100)
+            : 0;
+
+        await supabase.from('purchases').update({ progress }).eq('user_id', userId).eq('course_id', courseId);
+
+        res.json({ success: true, message: 'Lesson marked incomplete' });
     } catch (err) {
         console.error('Mark incomplete error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
