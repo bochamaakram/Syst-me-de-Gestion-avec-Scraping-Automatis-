@@ -3,7 +3,16 @@
  * Handles all API communication with the backend
  */
 const api = {
-    baseUrl: window.location.port === '5500' ? 'http://localhost:3000/api' : '/api',
+    // Dynamic base URL: handles local dev (Live Server on 5500, Node on 3000) and production
+    baseUrl: (() => {
+        const { hostname, port, protocol } = window.location;
+        // Live Server on port 5500 -> use localhost:3000
+        if (port === '5500') return 'http://localhost:3000/api';
+        // Local dev on port 3000 -> use same origin
+        if (hostname === 'localhost' || hostname === '127.0.0.1') return '/api';
+        // Production (Vercel) -> use same origin
+        return '/api';
+    })(),
 
     /**
      * Make an authenticated API request
