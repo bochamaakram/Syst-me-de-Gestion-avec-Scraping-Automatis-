@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | knowway</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-hero {
+            background: linear-gradient(135deg, var(--surface0) 0%, var(--crust) 100%);
+        }
+
+        .admin-hero h1 {
+            color: var(--text);
+        }
+
+        .admin-hero p {
+            color: var(--subtext0);
+            margin-top: var(--space-sm);
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stat-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            text-align: center;
+            transition: all var(--transition);
+        }
+
+        .stat-box:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-box-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: var(--space-xs);
+            color: var(--text);
+        }
+
+        .stat-box-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .stat-box-value.admin {
+            color: var(--red);
+        }
+
+        .stat-box-value.teacher {
+            color: var(--primary);
+        }
+
+        .stat-box-value.learner {
+            color: var(--subtext0);
+        }
+
+        .access-denied {
+            text-align: center;
+            padding: var(--space-2xl);
+        }
+
+        .access-denied h2 {
+            font-size: 22px;
+            margin-bottom: var(--space-md);
+        }
+
+        .access-denied p {
+            color: var(--text-secondary);
+            margin-bottom: var(--space-lg);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="navbar-brand">knowway</a>
+            <ul class="navbar-nav">
+                <li><a href="hub.html">Explore</a></li>
+                <li><a href="index.html">My Learning</a></li>
+            </ul>
+            <div class="navbar-user" id="navbarUser"></div>
+        </div>
+    </nav>
+
+    <div id="loadingState" class="empty-state">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="accessDenied" class="access-denied hidden">
+        <h2>Access Denied</h2>
+        <p>You don't have permission to access the admin panel.</p>
+        <a href="index.html" class="btn btn-primary btn-lg">Go to Home</a>
+    </div>
+
+    <div id="adminContent" class="hidden">
+        <section class="admin-hero hero">
+            <div class="container">
+                <h1>Admin Panel</h1>
+                <p>Manage users and assign roles</p>
+            </div>
+        </section>
+
+        <main class="container">
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-box-value" id="totalUsers">0</div>
+                    <div class="stat-box-label">Total Users</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value teacher" id="totalTeachers">0</div>
+                    <div class="stat-box-label">Teachers</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value learner" id="totalLearners">0</div>
+                    <div class="stat-box-label">Learners</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">All Users</h2>
+                </div>
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Current Role</th>
+                            <th>Change Role</th>
+                            <th>Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+    <script src="app.js"></script>
+    <script>
+        let currentUser = null;
+        let allUsers = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateNavbar();
+            await checkAccess();
+        });
+
+        function updateNavbar() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            document.getElementById('navbarUser').innerHTML = user
+                ? `<a href="dashboard.html"><button class="btn btn-sm" style="background:var(--primary);color:var(--crust);width:40px;height:40px;border-radius:var(--radius-full);font-weight:700;cursor:pointer;">${user.username.charAt(0).toUpperCase()}</button></a>`
+                : `<a href="login.html" class="btn btn-secondary btn-sm">Log in</a>`;
+        }
+
+        async function checkAccess() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            currentUser = JSON.parse(localStorage.getItem('user'));
+
+            // Verify role from API
+            try {
+                const roleRes = await api.getMyRole();
+                if (!roleRes.success || roleRes.role !== 'super_admin') {
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('accessDenied').classList.remove('hidden');
+                    return;
+                }
+            } catch (e) {
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('accessDenied').classList.remove('hidden');
+                return;
+            }
+
+            await loadUsers();
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await api.getAllUsers();
+                if (res.success) {
+                    allUsers = res.users;
+                    renderUsers();
+                    updateStats();
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('adminContent').classList.remove('hidden');
+                } else {
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('accessDenied').classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('accessDenied').classList.remove('hidden');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalUsers').textContent = allUsers.length;
+            document.getElementById('totalTeachers').textContent = allUsers.filter(u => u.role === 'teacher').length;
+            document.getElementById('totalLearners').textContent = allUsers.filter(u => u.role === 'learner').length;
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = allUsers.map(u => `
+                <tr>
+                    <td><strong>#${u.id}</strong></td>
+                    <td><strong>${escapeHtml(u.username)}</strong></td>
+                    <td>${escapeHtml(u.email)}</td>
+                    <td><span class="role-badge ${u.role}">${formatRole(u.role)}</span></td>
+                    <td>
+                        ${u.id === 1
+                    ? '<span style="color:var(--text-muted);font-size:12px">Protected</span>'
+                    : `<select class="role-select" onchange="changeRole(${u.id}, this.value)">
+                                <option value="learner" ${u.role === 'learner' ? 'selected' : ''}>Learner</option>
+                                <option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>Teacher</option>
+                               </select>`
+                }
+                    </td>
+                    <td style="color:var(--text-muted);font-size:13px">${new Date(u.created_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function formatRole(role) {
+            return { super_admin: 'Super Admin', teacher: 'Teacher', learner: 'Learner' }[role] || role;
+        }
+
+        async function changeRole(userId, newRole) {
+            try {
+                const res = await api.updateUserRole(userId, newRole);
+                if (res.success) {
+                    showToast('Role updated successfully');
+                    const user = allUsers.find(u => u.id === userId);
+                    if (user) user.role = newRole;
+                    renderUsers();
+                    updateStats();
+                } else {
+                    showToast(res.message || 'Failed to update role', 'error');
+                    await loadUsers();
+                }
+            } catch (e) {
+                showToast('Failed to update role', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

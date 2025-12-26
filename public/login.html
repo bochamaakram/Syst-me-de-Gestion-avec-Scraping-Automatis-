@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in | knowway Clone</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1 id="authTitle">Log in to your account</h1>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Password" required>
+                </div>
+                <button type="submit" class="btn btn-dark btn-lg" style="width:100%">Log in</button>
+            </form>
+
+            <form id="registerForm" style="display:none" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label class="form-label">Full name</label>
+                    <input type="text" id="registerUsername" class="form-control" placeholder="Full name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="registerEmail" class="form-control" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="registerPassword" class="form-control" placeholder="Password" required
+                        minlength="6">
+                </div>
+                <button type="submit" class="btn btn-dark btn-lg" style="width:100%">Sign up</button>
+            </form>
+
+            <div class="auth-divider">or</div>
+
+            <p class="auth-switch" id="loginSwitch">Don't have an account? <a href="#"
+                    onclick="showForm('register')">Sign up</a></p>
+            <p class="auth-switch" id="registerSwitch" style="display:none">Already have an account? <a href="#"
+                    onclick="showForm('login')">Log in</a></p>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+    <script src="app.js"></script>
+    <script>
+        if (localStorage.getItem('token')) window.location.href = 'index.html';
+
+        function showForm(type) {
+            const isLogin = type === 'login';
+            document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
+            document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
+            document.getElementById('loginSwitch').style.display = isLogin ? 'block' : 'none';
+            document.getElementById('registerSwitch').style.display = isLogin ? 'none' : 'block';
+            document.getElementById('authTitle').textContent = isLogin ? 'Log in to your account' : 'Sign up and start learning';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            try {
+                const res = await api.login({
+                    email: document.getElementById('loginEmail').value,
+                    password: document.getElementById('loginPassword').value
+                });
+                if (res.success) {
+                    localStorage.setItem('token', res.token);
+                    localStorage.setItem('user', JSON.stringify(res.user));
+                    // Clear courses data for fresh start
+                    localStorage.removeItem('purchasedCourses');
+                    localStorage.removeItem('courseProgress');
+                    localStorage.removeItem('completedCourses');
+                    window.location.href = 'index.html';
+                } else showToast(res.message || 'Login failed', 'error');
+            } catch (err) { showToast('Login failed', 'error'); }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            try {
+                const res = await api.register({
+                    username: document.getElementById('registerUsername').value,
+                    email: document.getElementById('registerEmail').value,
+                    password: document.getElementById('registerPassword').value
+                });
+                if (res.success) {
+                    localStorage.setItem('token', res.token);
+                    localStorage.setItem('user', JSON.stringify(res.user));
+                    // Clear courses data for fresh start
+                    localStorage.removeItem('purchasedCourses');
+                    localStorage.removeItem('courseProgress');
+                    localStorage.removeItem('completedCourses');
+                    window.location.href = 'index.html';
+                } else showToast(res.message || 'Registration failed', 'error');
+            } catch (err) { showToast('Registration failed', 'error'); }
+        }
+    </script>
+</body>
+
+</html>
