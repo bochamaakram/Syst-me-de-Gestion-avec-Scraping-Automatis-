@@ -1,52 +1,580 @@
--- Seed Data for Course Management App
--- Run: mysql -u root -proot-pass course_management < seed.sql
--- Note: User ID 1 is automatically super_admin via backend logic
+-- Seed data for knowway
+-- Run after schema.sql
 
--- Create first user (will be super_admin by code, id=1)
-INSERT INTO users (username, email, password, bio) VALUES 
-('Admin User', 'admin@knowway.com', '$2a$10$rQnM1234567890abcdefgOxyzABCDEFGHIJKLMNOPQRSTUVWXYZ12', 'Platform Administrator');
+-- Clear existing data (optional - comment out if you want to keep data)
+-- DELETE FROM course_lessons;
+-- DELETE FROM purchases;
+-- DELETE FROM favorites;
+-- DELETE FROM courses;
+-- DELETE FROM users WHERE id > 1;
 
--- Create teacher accounts (can be promoted via admin panel)
-INSERT INTO users (username, email, password, role, bio) VALUES 
-('John Smith', 'john@instructor.com', '$2a$10$rQnM1234567890abcdefgOxyzABCDEFGHIJKLMNOPQRSTUVWXYZ12', 'teacher', 'Senior Full Stack Developer with 10+ years of experience'),
-('Sarah Johnson', 'sarah@instructor.com', '$2a$10$rQnM1234567890abcdefgOxyzABCDEFGHIJKLMNOPQRSTUVWXYZ12', 'teacher', 'UI/UX Designer and Creative Director'),
-('Mike Chen', 'mike@instructor.com', '$2a$10$rQnM1234567890abcdefgOxyzABCDEFGHIJKLMNOPQRSTUVWXYZ12', 'teacher', 'Digital Marketing Expert and Growth Hacker');
+-- Users (password: 123456 - bcrypt hash)
+INSERT INTO users (username, email, password, role) VALUES
+('admin', 'admin@knowway.com', '$2a$10$rDkPvvAFV8kqwevKYqNBNOVnHX7id8JKDj2Z5E5xRJxRJxRJxRJx6', 'super_admin'),
+('john_teacher', 'john@knowway.com', '$2a$10$rDkPvvAFV8kqwevKYqNBNOVnHX7id8JKDj2Z5E5xRJxRJxRJxRJx6', 'teacher'),
+('sarah_teacher', 'sarah@knowway.com', '$2a$10$rDkPvvAFV8kqwevKYqNBNOVnHX7id8JKDj2Z5E5xRJxRJxRJxRJx6', 'teacher'),
+('mike_learner', 'mike@knowway.com', '$2a$10$rDkPvvAFV8kqwevKYqNBNOVnHX7id8JKDj2Z5E5xRJxRJxRJxRJx6', 'learner')
+ON DUPLICATE KEY UPDATE username=username;
 
--- Development Courses (by John Smith - user_id: 2)
-INSERT INTO courses (title, short_description, description, category, duration, price, discount_price, level, status, image_url, total_lessons, total_students, rating, requirements, what_you_learn, who_is_for, user_id) VALUES
-('The Complete React Developer Course', 'Master React with hooks, redux, and real projects', 'Learn React by building real-world applications. This course covers everything from React basics to advanced patterns including hooks, context, Redux, and testing.', 'dev', 40, 89.99, 12.99, 'beginner', 'active', 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800', 245, 125890, 4.7, 'Basic HTML, CSS, and JavaScript knowledge\nA computer with internet access\nNo prior React experience needed', 'Build powerful React applications from scratch\nMaster React Hooks and functional components\nHandle state with Redux and Context API\nTest React applications', 'Beginners who want to learn React\nJavaScript developers expanding their skills\nDevelopers building modern web apps', 2),
+-- =====================
+-- COURSE 1: JavaScript Fundamentals
+-- =====================
+INSERT INTO courses (id, user_id, title, short_description, description, category, level, price, duration, image_url, status) VALUES
+(1, 2, 'JavaScript Fundamentals', 
+'Master the core concepts of JavaScript from scratch',
+'A comprehensive introduction to JavaScript programming. Learn variables, functions, objects, arrays, and modern ES6+ features. Perfect for beginners who want to start their web development journey.',
+'dev', 'beginner', 0, 8, 
+'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=800', 'active')
+ON DUPLICATE KEY UPDATE title=title;
 
-('Node.js: The Complete Guide', 'Build scalable backend services with Node.js', 'Master Node.js and build fast, scalable network applications. Learn REST APIs, GraphQL, authentication, databases, and deployment.', 'dev', 35, 94.99, 13.99, 'intermediate', 'active', 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800', 320, 89540, 4.8, 'JavaScript fundamentals\nBasic programming concepts', 'Build REST and GraphQL APIs\nImplement authentication and authorization\nWork with MongoDB and SQL databases\nDeploy applications to production', 'JavaScript developers\nFrontend devs learning backend\nAnyone interested in server-side development', 2),
+INSERT INTO course_lessons (course_id, title, content, video_url, order_index) VALUES
+(1, 'Introduction to JavaScript', 
+'# Welcome to JavaScript!
 
-('Python for Data Science and Machine Learning', 'Complete Python bootcamp for data science', 'Learn Python programming and apply it to data science, machine learning, and AI. Covers NumPy, Pandas, Matplotlib, Scikit-Learn, and TensorFlow.', 'dev', 55, 129.99, 14.99, 'intermediate', 'active', 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800', 380, 156000, 4.6, 'Basic programming experience helpful\nNo Python knowledge required', 'Master Python programming from basics to advanced\nAnalyze data with NumPy and Pandas\nCreate visualizations with Matplotlib\nBuild machine learning models', 'Aspiring data scientists\nDevelopers interested in ML/AI\nAnalysts wanting to automate tasks', 2),
+JavaScript is the programming language of the web. It powers interactive websites, web applications, and even server-side applications.
 
-('JavaScript: Understanding the Weird Parts', 'Deep dive into JavaScript internals', 'Go deep inside the JavaScript engine and understand how the language really works. Closures, prototypes, the event loop, and more.', 'dev', 12, 49.99, NULL, 'advanced', 'active', 'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=800', 85, 245000, 4.9, 'Basic JavaScript knowledge\nSome programming experience', 'Understand JavaScript at a deep level\nMaster closures, prototypes, and scope\nDebug code more effectively\nWrite cleaner, more efficient code', 'JavaScript developers of all levels\nDevelopers preparing for interviews\nAnyone curious about JS internals', 2),
+## What You Will Learn
 
-('Git and GitHub Masterclass', 'Version control for professionals', 'Everything you need to know about Git and GitHub for professional development teams. Branching strategies, pull requests, and collaboration workflows.', 'dev', 8, 0.00, NULL, 'beginner', 'active', 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=800', 48, 380000, 4.8, 'Basic command line knowledge\nNo Git experience needed', 'Master Git commands and concepts\nCollaborate using GitHub\nHandle merge conflicts confidently\nUse Git in professional workflows', 'Developers new to version control\nTeams improving their workflow\nAnyone working with code', 2);
+In this course, you will learn:
+- Variables and data types
+- Functions and scope
+- Objects and arrays
+- DOM manipulation
+- Modern ES6+ features
 
--- Design Courses (by Sarah Johnson - user_id: 3)
-INSERT INTO courses (title, short_description, description, category, duration, price, discount_price, level, status, image_url, total_lessons, total_students, rating, requirements, what_you_learn, who_is_for, user_id) VALUES
-('UI/UX Design Bootcamp', 'Become a professional UI/UX designer', 'Complete UI/UX design course. Learn Figma, design principles, user research, wireframing, prototyping, and how to land your first design job.', 'design', 30, 99.99, 12.99, 'beginner', 'active', 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800', 180, 78500, 4.7, 'No design experience required\nWillingness to practice', 'Create beautiful user interfaces\nConduct user research and testing\nBuild interactive prototypes in Figma\nCreate a portfolio that gets you hired', 'Career changers wanting to enter design\nDevelopers adding design skills\nAnyone interested in UX', 3),
+## Why JavaScript?
 
-('Figma: UI Design Essential Training', 'Master Figma from zero to hero', 'Learn everything about Figma - the industry standard design tool. Components, auto-layout, prototyping, collaboration, and plugins.', 'design', 15, 59.99, 10.99, 'beginner', 'active', 'https://images.unsplash.com/photo-1609921212029-bb5a28e60960?w=800', 95, 145000, 4.9, 'Computer with internet access\nFree Figma account', 'Master the Figma interface completely\nCreate complex component systems\nBuild interactive prototypes\nCollaborate with teams effectively', 'Designers new to Figma\nDesigners switching from other tools\nDevelopers working with designers', 3),
+JavaScript is everywhere:
+- **Frontend**: React, Vue, Angular
+- **Backend**: Node.js, Express
+- **Mobile**: React Native, Ionic
+- **Desktop**: Electron
 
-('Adobe Photoshop CC: Complete Guide', 'Photo editing and graphic design mastery', 'Master Adobe Photoshop from basics to advanced techniques. Photo manipulation, compositing, retouching, and graphic design.', 'design', 25, 79.99, 11.99, 'intermediate', 'active', 'https://images.unsplash.com/photo-1572044162444-ad60f128bdea?w=800', 165, 234000, 4.6, 'Photoshop CC installed\nBasic computer skills', 'Master selection and masking techniques\nRetouch photos professionally\nCreate stunning composites\nDesign graphics for any medium', 'Photographers wanting to edit better\nGraphic designers\nContent creators', 3),
+Let''s get started!', 
+'https://www.youtube.com/watch?v=W6NZfCO5SIk', 1),
 
-('Brand Identity Design: The Complete Course', 'Create memorable brand identities', 'Learn to design complete brand identity systems. Logo design, color theory, typography, brand guidelines, and client presentation.', 'design', 18, 74.99, NULL, 'intermediate', 'active', 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800', 110, 45600, 4.5, 'Basic design software knowledge\nCreative mindset', 'Design professional logos\nDevelop cohesive brand systems\nCreate comprehensive brand guidelines\nPresent and sell your work to clients', 'Graphic designers\nFreelancers starting their business\nMarketing professionals', 3),
+(1, 'Variables and Data Types',
+'# Variables in JavaScript
 
-('Web Design Fundamentals', 'Foundation of great web design', 'Free introduction to web design principles. Visual hierarchy, color theory, typography, layout, and responsive design basics.', 'design', 6, 0.00, NULL, 'beginner', 'active', 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=800', 42, 520000, 4.4, 'No experience needed\nCuriosity about design', 'Understand visual hierarchy\nChoose effective color schemes\nWork with typography\nCreate balanced layouts', 'Complete beginners\nDevelopers improving their design eye\nAnyone creating websites', 3);
+Variables are containers for storing data values.
 
--- Marketing Courses (by Mike Chen - user_id: 4)
-INSERT INTO courses (title, short_description, description, category, duration, price, discount_price, level, status, image_url, total_lessons, total_students, rating, requirements, what_you_learn, who_is_for, user_id) VALUES
-('Digital Marketing Masterclass', 'Complete digital marketing strategy', 'Learn all aspects of digital marketing: SEO, social media, email marketing, content marketing, PPC advertising, analytics, and strategy.', 'marketing', 45, 119.99, 13.99, 'intermediate', 'active', 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800', 280, 98700, 4.6, 'No marketing experience required\nAccess to social media accounts', 'Create comprehensive marketing strategies\nRun profitable ad campaigns\nBuild and grow email lists\nAnalyze and optimize performance', 'Business owners\nMarketing professionals\nEntrepreneurs launching products', 4),
+## Declaring Variables
 
-('SEO 2024: Complete SEO Training', 'Rank #1 on Google in 2024', 'Up-to-date SEO strategies that actually work. Keyword research, on-page SEO, technical SEO, link building, and local SEO.', 'marketing', 20, 79.99, 11.99, 'intermediate', 'active', 'https://images.unsplash.com/photo-1562577309-4932fdd64cd1?w=800', 142, 67800, 4.7, 'A website to practice on\nBasic understanding of websites', 'Rank websites higher in Google\nConduct professional keyword research\nFix technical SEO issues\nBuild quality backlinks ethically', 'Website owners\nContent creators\nDigital marketers', 4),
+```javascript
+// Modern way (ES6+)
+let name = "John";
+const age = 25;
 
-('Social Media Marketing: Strategy & Ads', 'Master social media for business', 'Complete social media marketing course. Content strategy, paid advertising on Facebook, Instagram, LinkedIn, TikTok, and analytics.', 'marketing', 22, 84.99, 12.99, 'beginner', 'active', 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800', 156, 134500, 4.5, 'Social media accounts\nBusiness or brand to promote', 'Create engaging content strategies\nRun profitable social media ads\nGrow organic following\nMeasure and improve ROI', 'Small business owners\nSocial media managers\nInfluencers and creators', 4),
+// Old way (avoid)
+var oldWay = "deprecated";
+```
 
-('Google Ads Mastery: Complete Course', 'Become a Google Ads expert', 'Master Google Ads from scratch. Search ads, display ads, shopping ads, YouTube ads, and conversion optimization.', 'marketing', 28, 99.99, 14.99, 'advanced', 'active', 'https://images.unsplash.com/photo-1553484771-371a605b060b?w=800', 185, 56400, 4.8, 'Google account\nBasic marketing understanding', 'Set up profitable Google Ads campaigns\nOptimize for conversions\nLower cost per acquisition\nScale winning campaigns', 'Marketing professionals\nBusiness owners\nAgency employees', 4),
+## Data Types
 
-('Email Marketing & Automation', 'Build and nurture your email list', 'Free email marketing fundamentals. List building, email copywriting, automation sequences, and deliverability best practices.', 'marketing', 8, 0.00, NULL, 'beginner', 'active', 'https://images.unsplash.com/photo-1542744094-3a31f272c490?w=800', 52, 289000, 4.4, 'An email service provider\nA product or content to promote', 'Build high-quality email lists\nWrite emails that convert\nCreate automated email sequences\nImprove deliverability rates', 'Online business owners\nContent creators\nAnyone building an audience', 4);
+JavaScript has several data types:
+
+1. **String**: Text values
+2. **Number**: Numeric values
+3. **Boolean**: true or false
+4. **Array**: List of values
+5. **Object**: Key-value pairs
+6. **Null**: Intentional absence
+7. **Undefined**: Uninitialized
+
+## Examples
+
+```javascript
+let message = "Hello World";  // String
+let count = 42;               // Number
+let isActive = true;          // Boolean
+let colors = ["red", "blue"]; // Array
+let user = { name: "John" };  // Object
+```
+
+Practice these concepts before moving on!',
+NULL, 2),
+
+(1, 'Functions',
+'# Functions in JavaScript
+
+Functions are reusable blocks of code that perform specific tasks.
+
+## Function Declaration
+
+```javascript
+function greet(name) {
+    return "Hello, " + name + "!";
+}
+
+console.log(greet("World")); // Hello, World!
+```
+
+## Arrow Functions (ES6)
+
+```javascript
+const greet = (name) => {
+    return `Hello, ${name}!`;
+};
+
+// Short syntax
+const double = x => x * 2;
+```
+
+## Parameters and Arguments
+
+```javascript
+function add(a, b) {
+    return a + b;
+}
+
+add(5, 3); // Returns 8
+```
+
+## Best Practices
+
+- Use descriptive function names
+- Each function should do one thing
+- Keep functions small and focused
+- Use arrow functions for callbacks',
+NULL, 3),
+
+(1, 'Objects and Arrays',
+'# Objects and Arrays
+
+## Arrays
+
+Arrays store multiple values in a single variable.
+
+```javascript
+const fruits = ["apple", "banana", "orange"];
+
+// Access elements
+console.log(fruits[0]); // apple
+
+// Array methods
+fruits.push("grape");    // Add to end
+fruits.pop();            // Remove from end
+fruits.length;           // Get length
+```
+
+## Objects
+
+Objects store key-value pairs.
+
+```javascript
+const person = {
+    name: "John",
+    age: 30,
+    city: "New York"
+};
+
+// Access properties
+console.log(person.name);     // John
+console.log(person["age"]);   // 30
+```
+
+## Combining Both
+
+```javascript
+const users = [
+    { id: 1, name: "Alice" },
+    { id: 2, name: "Bob" },
+    { id: 3, name: "Charlie" }
+];
+```',
+NULL, 4);
+
+-- =====================
+-- COURSE 2: React for Beginners
+-- =====================
+INSERT INTO courses (id, user_id, title, short_description, description, category, level, price, duration, image_url, status) VALUES
+(2, 2, 'React for Beginners',
+'Build modern user interfaces with React',
+'Learn React from the ground up. Understand components, state, props, hooks, and build real-world applications. This course will take you from zero to building production-ready React apps.',
+'dev', 'intermediate', 29.99, 12,
+'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800', 'active')
+ON DUPLICATE KEY UPDATE title=title;
+
+INSERT INTO course_lessons (course_id, title, content, video_url, order_index) VALUES
+(2, 'What is React?',
+'# Introduction to React
+
+React is a JavaScript library for building user interfaces, developed by Facebook.
+
+## Why React?
+
+- **Component-Based**: Build encapsulated components
+- **Declarative**: Describe what you want, React handles the how
+- **Learn Once, Write Anywhere**: Web, mobile, desktop
+
+## Key Concepts
+
+1. **Components**: Building blocks of React apps
+2. **JSX**: HTML-like syntax in JavaScript
+3. **Props**: Data passed to components
+4. **State**: Dynamic data within components
+5. **Hooks**: Functions to use React features
+
+## Your First React App
+
+```jsx
+function App() {
+    return (
+        <div>
+            <h1>Hello React!</h1>
+            <p>Welcome to your first React app.</p>
+        </div>
+    );
+}
+```',
+'https://www.youtube.com/watch?v=Tn6-PIqc4UM', 1),
+
+(2, 'Components and Props',
+'# React Components
+
+Components are the building blocks of React applications.
+
+## Function Components
+
+```jsx
+function Welcome(props) {
+    return <h1>Hello, {props.name}!</h1>;
+}
+
+// Usage
+<Welcome name="John" />
+```
+
+## Props
+
+Props are read-only data passed from parent to child.
+
+```jsx
+function Card({ title, description, image }) {
+    return (
+        <div className="card">
+            <img src={image} alt={title} />
+            <h2>{title}</h2>
+            <p>{description}</p>
+        </div>
+    );
+}
+
+// Usage
+<Card 
+    title="Learn React"
+    description="Build amazing UIs"
+    image="react.png"
+/>
+```
+
+## Component Composition
+
+```jsx
+function App() {
+    return (
+        <div>
+            <Header />
+            <MainContent />
+            <Footer />
+        </div>
+    );
+}
+```',
+NULL, 2),
+
+(2, 'State and Hooks',
+'# State Management with Hooks
+
+State allows components to manage dynamic data.
+
+## useState Hook
+
+```jsx
+import { useState } from "react";
+
+function Counter() {
+    const [count, setCount] = useState(0);
+    
+    return (
+        <div>
+            <p>Count: {count}</p>
+            <button onClick={() => setCount(count + 1)}>
+                Increment
+            </button>
+        </div>
+    );
+}
+```
+
+## useEffect Hook
+
+```jsx
+import { useState, useEffect } from "react";
+
+function DataFetcher() {
+    const [data, setData] = useState(null);
+    
+    useEffect(() => {
+        fetch("/api/data")
+            .then(res => res.json())
+            .then(data => setData(data));
+    }, []);
+    
+    return <div>{data ? data.message : "Loading..."}</div>;
+}
+```
+
+## Rules of Hooks
+
+1. Only call hooks at the top level
+2. Only call hooks from React functions
+3. Hooks must be called in the same order',
+NULL, 3);
+
+-- =====================
+-- COURSE 3: UI/UX Design Basics
+-- =====================
+INSERT INTO courses (id, user_id, title, short_description, description, category, level, price, duration, image_url, status) VALUES
+(3, 3, 'UI/UX Design Basics',
+'Learn the fundamentals of user interface and experience design',
+'Discover the principles of great design. Learn about color theory, typography, layout, user research, and prototyping. Create beautiful and functional designs that users love.',
+'design', 'beginner', 19.99, 6,
+'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800', 'active')
+ON DUPLICATE KEY UPDATE title=title;
+
+INSERT INTO course_lessons (course_id, title, content, video_url, order_index) VALUES
+(3, 'Introduction to UI/UX',
+'# UI/UX Design Fundamentals
+
+## What is UI?
+
+**User Interface (UI)** is about how a product looks and feels:
+- Colors, fonts, icons
+- Buttons, inputs, layouts
+- Visual hierarchy
+- Brand identity
+
+## What is UX?
+
+**User Experience (UX)** is about how a product works:
+- User research
+- Information architecture
+- Wireframing
+- Usability testing
+
+## The Design Process
+
+1. **Research**: Understand users and goals
+2. **Define**: Create personas and user flows
+3. **Design**: Wireframes and prototypes
+4. **Test**: Validate with real users
+5. **Iterate**: Improve based on feedback
+
+![Design Process](https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=600)',
+NULL, 1),
+
+(3, 'Color Theory',
+'# Color Theory for Designers
+
+## The Color Wheel
+
+Understanding color relationships is essential for design.
+
+### Primary Colors
+- Red, Yellow, Blue
+
+### Secondary Colors
+- Orange, Green, Purple
+
+### Tertiary Colors
+- Mix of primary and secondary
+
+## Color Harmonies
+
+- **Complementary**: Opposite colors (high contrast)
+- **Analogous**: Adjacent colors (harmony)
+- **Triadic**: Three colors equally spaced
+
+## Color Psychology
+
+- **Red**: Energy, passion, urgency
+- **Blue**: Trust, calm, professional
+- **Green**: Growth, nature, health
+- **Yellow**: Optimism, happiness
+- **Purple**: Luxury, creativity
+
+## Best Practices
+
+1. Use 60-30-10 rule
+2. Consider accessibility (contrast)
+3. Be consistent with brand colors
+4. Test in different contexts',
+NULL, 2),
+
+(3, 'Typography Essentials',
+'# Typography in Design
+
+Good typography makes content readable and enjoyable.
+
+## Font Categories
+
+1. **Serif**: Traditional, formal (Times New Roman)
+2. **Sans-serif**: Modern, clean (Arial, Helvetica)
+3. **Display**: Decorative, headlines only
+4. **Monospace**: Code, technical content
+
+## Hierarchy
+
+Create visual hierarchy with:
+- **Size**: Larger = more important
+- **Weight**: Bold for emphasis
+- **Color**: Contrast for attention
+- **Spacing**: Breathing room
+
+## Typography Rules
+
+```
+H1: 32-48px
+H2: 24-32px
+H3: 18-24px
+Body: 16-18px
+Caption: 12-14px
+```
+
+## Pairing Fonts
+
+- One serif + one sans-serif
+- Same font family, different weights
+- Maximum 2-3 fonts per project
+
+## Line Height & Spacing
+
+- Body text: 1.5-1.7 line height
+- Headlines: 1.1-1.3 line height
+- Paragraph spacing: 1.5em',
+NULL, 3);
+
+-- =====================
+-- COURSE 4: Digital Marketing
+-- =====================
+INSERT INTO courses (id, user_id, title, short_description, description, category, level, price, duration, image_url, status) VALUES
+(4, 3, 'Digital Marketing Mastery',
+'Complete guide to digital marketing strategies',
+'Learn SEO, social media marketing, email campaigns, and paid advertising. Build comprehensive marketing strategies that drive results and grow businesses.',
+'marketing', 'intermediate', 49.99, 15,
+'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800', 'active')
+ON DUPLICATE KEY UPDATE title=title;
+
+INSERT INTO course_lessons (course_id, title, content, video_url, order_index) VALUES
+(4, 'Digital Marketing Overview',
+'# Welcome to Digital Marketing
+
+## What is Digital Marketing?
+
+Digital marketing encompasses all marketing efforts using electronic devices or the internet.
+
+## Key Channels
+
+1. **Search Engine Optimization (SEO)**
+2. **Pay-Per-Click (PPC)**
+3. **Social Media Marketing**
+4. **Content Marketing**
+5. **Email Marketing**
+6. **Affiliate Marketing**
+
+## Why Digital Marketing?
+
+- Measurable results
+- Cost-effective
+- Targeted reach
+- Global audience
+- Real-time adjustments
+
+## The Marketing Funnel
+
+```
+Awareness → Interest → Consideration → Conversion → Retention
+```
+
+This course will cover strategies for each stage.',
+NULL, 1),
+
+(4, 'SEO Fundamentals',
+'# Search Engine Optimization
+
+## What is SEO?
+
+SEO is the practice of optimizing content to rank higher in search engine results.
+
+## On-Page SEO
+
+- **Title Tags**: Include keywords, 50-60 characters
+- **Meta Descriptions**: Compelling, 150-160 characters
+- **Headers**: Use H1, H2, H3 hierarchy
+- **Content**: Quality, relevant, keyword-rich
+- **URLs**: Short, descriptive, include keywords
+
+## Technical SEO
+
+- Site speed optimization
+- Mobile responsiveness
+- SSL certificate (HTTPS)
+- XML sitemaps
+- Robots.txt
+
+## Off-Page SEO
+
+- Backlink building
+- Social signals
+- Brand mentions
+- Guest posting
+
+## Tools
+
+- Google Search Console
+- Google Analytics
+- Ahrefs / SEMrush
+- Moz',
+NULL, 2),
+
+(4, 'Social Media Strategy',
+'# Social Media Marketing
+
+## Platform Selection
+
+Choose platforms based on your audience:
+
+| Platform | Best For |
+|----------|----------|
+| Facebook | B2C, community |
+| Instagram | Visual brands |
+| LinkedIn | B2B, professional |
+| Twitter | News, engagement |
+| TikTok | Gen Z, viral |
+
+## Content Strategy
+
+- **80/20 Rule**: 80% value, 20% promotion
+- **Consistency**: Regular posting schedule
+- **Engagement**: Respond to comments
+- **Hashtags**: Research and use strategically
+
+## Content Types
+
+1. Educational posts
+2. Behind-the-scenes
+3. User-generated content
+4. Stories and reels
+5. Live videos
+
+## Metrics to Track
+
+- Reach and impressions
+- Engagement rate
+- Click-through rate
+- Follower growth
+- Conversion rate',
+NULL, 3);
 
 SELECT 'Seed data inserted successfully!' as message;
-SELECT category, COUNT(*) as count, CONCAT('$', ROUND(AVG(price), 2)) as avg_price FROM courses GROUP BY category;

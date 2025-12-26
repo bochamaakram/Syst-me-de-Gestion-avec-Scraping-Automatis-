@@ -102,18 +102,91 @@ function formatDate(dateStr) {
  */
 function parseMarkdown(content) {
     if (!content) return '';
-    return content
+
+    // Process code blocks first (preserve them)
+    const codeBlocks = [];
+    content = content.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+        codeBlocks.push(`<pre><code>${escapeHtml(code.trim())}</code></pre>`);
+        return `%%CODEBLOCK${codeBlocks.length - 1}%%`;
+    });
+
+    let html = content
+        // Headings
         .replace(/^### (.+)$/gm, '<h3>$1</h3>')
         .replace(/^## (.+)$/gm, '<h2>$1</h2>')
         .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        // Bold and italic
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // Inline code
         .replace(/`(.+?)`/g, '<code>$1</code>')
+        // Images and links
         .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1">')
-        .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
-        .replace(/^- (.+)$/gm, '<li>$1</li>')
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/^([^<].*)$/gm, '<p>$1</p>');
+        .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+    // Process lists
+    const lines = html.split('\n');
+    let result = [];
+    let listStack = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const ulMatch = line.match(/^(\s*)[-*]\s+(.+)$/);
+        const olMatch = line.match(/^(\s*)(\d+)\.\s+(.+)$/);
+
+        if (ulMatch) {
+            const indent = ulMatch[1].length;
+            const text = ulMatch[2];
+            const level = Math.floor(indent / 2);
+
+            while (listStack.length > level + 1) {
+                result.push(listStack.pop() === 'ul' ? '</ul>' : '</ol>');
+            }
+            if (listStack.length <= level) {
+                result.push('<ul>');
+                listStack.push('ul');
+            }
+            result.push(`<li>${text}</li>`);
+        } else if (olMatch) {
+            const indent = olMatch[1].length;
+            const text = olMatch[3];
+            const level = Math.floor(indent / 2);
+
+            while (listStack.length > level + 1) {
+                result.push(listStack.pop() === 'ul' ? '</ul>' : '</ol>');
+            }
+            if (listStack.length <= level) {
+                result.push('<ol>');
+                listStack.push('ol');
+            }
+            result.push(`<li>${text}</li>`);
+        } else {
+            while (listStack.length > 0) {
+                result.push(listStack.pop() === 'ul' ? '</ul>' : '</ol>');
+            }
+            if (line.trim() && !line.startsWith('<h') && !line.startsWith('<')) {
+                result.push(`<p>${line}</p>`);
+            } else {
+                result.push(line);
+            }
+        }
+    }
+
+    while (listStack.length > 0) {
+        result.push(listStack.pop() === 'ul' ? '</ul>' : '</ol>');
+    }
+
+    html = result.join('\n');
+
+    // Restore code blocks
+    codeBlocks.forEach((block, i) => {
+        html = html.replace(`%%CODEBLOCK${i}%%`, block);
+    });
+
+    // Clean up empty paragraphs
+    html = html.replace(/<p>\s*<\/p>/g, '');
+
+    return html;
 }
 
 /**

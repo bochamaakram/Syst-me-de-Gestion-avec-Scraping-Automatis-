@@ -3,7 +3,7 @@
  * Handles all API communication with the backend
  */
 const api = {
-    baseUrl: '/api',
+    baseUrl: window.location.port === '5500' ? 'http://localhost:3000/api' : '/api',
 
     /**
      * Make an authenticated API request

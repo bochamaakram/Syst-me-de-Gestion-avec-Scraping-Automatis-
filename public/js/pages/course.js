@@ -61,8 +61,9 @@ function renderSidebar() {
             <span class="lesson-nav-title">Course Overview</span>
         </li>
     ` + lessons.map((l, i) => `
-        <li class="lesson-nav-item ${currentLesson?.id === l.id ? 'active' : ''}" onclick="navigateToLesson(${l.id})">
-            <span class="lesson-nav-number">${i + 1}</span>
+        <li class="lesson-nav-item ${currentLesson?.id === l.id ? 'active' : ''} ${!isPurchased ? 'locked' : ''}" 
+            onclick="${isPurchased ? `navigateToLesson(${l.id})` : 'showEnrollPrompt()'}">
+            <span class="lesson-nav-number">${isPurchased ? i + 1 : '🔒'}</span>
             <span class="lesson-nav-title">${escapeHtml(l.title)}</span>
         </li>
     `).join('');
@@ -70,7 +71,7 @@ function renderSidebar() {
     document.getElementById('mobileSelect').innerHTML = `
         <option value="">Course Overview</option>
     ` + lessons.map((l, i) => `
-        <option value="${l.id}" ${currentLesson?.id === l.id ? 'selected' : ''}>${i + 1}. ${l.title}</option>
+        <option value="${isPurchased ? l.id : ''}" ${currentLesson?.id === l.id ? 'selected' : ''} ${!isPurchased ? 'disabled' : ''}>${i + 1}. ${l.title}${!isPurchased ? ' 🔒' : ''}</option>
     `).join('');
 
     updateEnrollButton();
@@ -157,8 +158,17 @@ async function loadLesson(lessonId) {
 
 function navigateToLesson(lessonId) {
     if (!lessonId) { showOverview(); return; }
+    if (!isPurchased) {
+        showEnrollPrompt();
+        return;
+    }
     window.history.pushState({}, '', `course.html?id=${course.id}&lesson=${lessonId}`);
     loadLesson(parseInt(lessonId));
+}
+
+function showEnrollPrompt() {
+    showToast('Please enroll to access lessons', 'error');
+    document.getElementById('enrollBtn').focus();
 }
 
 function updateEnrollButton() {
