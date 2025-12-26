@@ -96,7 +96,9 @@ function setupForms() {
             description: document.getElementById('courseDesc').value,
             category: document.getElementById('courseCategory').value,
             level: document.getElementById('courseLevel').value,
-            price: parseFloat(document.getElementById('coursePrice').value) || 0,
+            is_free: document.getElementById('courseFree').checked,
+            point_cost: parseInt(document.getElementById('coursePointCost').value) || 0,
+            points_reward: parseInt(document.getElementById('coursePointsReward').value) || 500,
             duration: parseInt(document.getElementById('courseDuration').value) || 0,
             image_url: document.getElementById('courseImage').value
         };
@@ -157,9 +159,17 @@ function showCourseForm(course = null) {
     document.getElementById('courseDesc').value = course?.description || '';
     document.getElementById('courseCategory').value = course?.category || 'dev';
     document.getElementById('courseLevel').value = course?.level || 'beginner';
-    document.getElementById('coursePrice').value = course?.price || 0;
+    document.getElementById('courseFree').checked = course?.is_free ?? true;
+    document.getElementById('coursePointCost').value = course?.point_cost || 0;
+    document.getElementById('coursePointsReward').value = course?.points_reward || 500;
     document.getElementById('courseDuration').value = course?.duration || 0;
     document.getElementById('courseImage').value = course?.image_url || '';
+    togglePointsFields();
+}
+
+function togglePointsFields() {
+    const isFree = document.getElementById('courseFree').checked;
+    document.getElementById('pointCostGroup').style.display = isFree ? 'none' : 'block';
 }
 
 function cancelCourseForm() {

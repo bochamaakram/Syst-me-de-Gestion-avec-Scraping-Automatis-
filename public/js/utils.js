@@ -43,16 +43,33 @@ function showToast(message, type = 'success') {
 }
 
 /**
- * Update navbar with user info
+ * Update navbar with user info and points
  */
-function updateNavbar() {
+async function updateNavbar() {
     const userContainer = document.getElementById('navbarUser');
     if (!userContainer) return;
 
     const user = JSON.parse(localStorage.getItem('user'));
-    userContainer.innerHTML = user
-        ? `<a href="profile.html"><button class="btn btn-sm" style="background:var(--primary);color:var(--crust);width:40px;height:40px;border-radius:var(--radius-full);font-weight:700;">${user.username.charAt(0).toUpperCase()}</button></a>`
-        : `<a href="login.html" class="btn btn-secondary btn-sm">Log in</a>`;
+    if (user) {
+        let pointsHtml = '';
+        try {
+            const res = await api.getPointsBalance();
+            if (res.success) {
+                pointsHtml = `<span class="points-badge" title="Your Points"> ${res.points}</span>`;
+            }
+        } catch (e) { }
+
+        userContainer.innerHTML = `
+            ${pointsHtml}
+            <a href="profile.html">
+                <button class="btn btn-sm" style="background:var(--primary);color:var(--crust);width:40px;height:40px;border-radius:var(--radius-full);font-weight:700;">
+                    ${user.username.charAt(0).toUpperCase()}
+                </button>
+            </a>
+        `;
+    } else {
+        userContainer.innerHTML = `<a href="login.html" class="btn btn-secondary btn-sm">Log in</a>`;
+    }
 }
 
 /**

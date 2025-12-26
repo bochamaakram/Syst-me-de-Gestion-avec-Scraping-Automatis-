@@ -54,12 +54,12 @@ exports.createCourse = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Only teachers and admins can create courses' });
         }
 
-        const { title, description, short_description, category = 'dev', duration = 0, price = 0, level = 'beginner', image_url } = req.body;
+        const { title, description, short_description, category = 'dev', duration = 0, is_free = true, point_cost = 0, points_reward = 500, level = 'beginner', image_url } = req.body;
         if (!title) return res.status(400).json({ success: false, message: 'Title is required' });
 
         const [result] = await db.query(
-            'INSERT INTO courses (title, description, short_description, category, duration, price, level, image_url, user_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [title, description || '', short_description || '', category, duration, price, level, image_url || null, req.user.id, 'active']
+            'INSERT INTO courses (title, description, short_description, category, duration, is_free, point_cost, points_reward, level, image_url, user_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [title, description || '', short_description || '', category, duration, is_free, point_cost, points_reward, level, image_url || null, req.user.id, 'active']
         );
 
         res.status(201).json({ success: true, message: 'Course created', courseId: result.insertId });
@@ -71,17 +71,34 @@ exports.createCourse = async (req, res) => {
 
 exports.updateCourse = async (req, res) => {
     try {
-        const { title, description, category, duration, price, level, status } = req.body;
+        const { title, description, short_description, category, duration, is_free, point_cost, points_reward, level, status, image_url, what_you_learn } = req.body;
         const [courses] = await db.query('SELECT * FROM courses WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
         if (courses.length === 0) return res.status(404).json({ success: false, message: 'Course not found or unauthorized' });
 
+        const c = courses[0];
         await db.query(
-            'UPDATE courses SET title = ?, description = ?, category = ?, duration = ?, price = ?, level = ?, status = ? WHERE id = ?',
-            [title || courses[0].title, description ?? courses[0].description, category || courses[0].category, duration ?? courses[0].duration, price ?? courses[0].price, level || courses[0].level, status || courses[0].status, req.params.id]
+            `UPDATE courses SET title = ?, description = ?, short_description = ?, category = ?, duration = ?, 
+             is_free = ?, point_cost = ?, points_reward = ?, level = ?, status = ?, image_url = ?, what_you_learn = ? WHERE id = ?`,
+            [
+                title || c.title,
+                description ?? c.description,
+                short_description ?? c.short_description,
+                category || c.category,
+                duration ?? c.duration,
+                is_free ?? c.is_free,
+                point_cost ?? c.point_cost,
+                points_reward ?? c.points_reward,
+                level || c.level,
+                status || c.status,
+                image_url ?? c.image_url,
+                what_you_learn ?? c.what_you_learn,
+                req.params.id
+            ]
         );
 
         res.json({ success: true, message: 'Course updated' });
     } catch (err) {
+        console.error('Update course error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };

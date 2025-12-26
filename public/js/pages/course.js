@@ -1,11 +1,15 @@
 /**
  * Course Page JavaScript
+ * Points-based system with quiz completion
  */
 let course = null;
 let lessons = [];
 let currentLesson = null;
 let isPurchased = false;
 let completedLessonIds = [];
+let quiz = null;
+let quizPassed = false;
+let selectedAnswers = {};
 
 document.addEventListener('DOMContentLoaded', async () => {
     updateNavbar();
@@ -16,6 +20,7 @@ async function loadCourse() {
     const params = new URLSearchParams(window.location.search);
     const courseId = params.get('id');
     const lessonId = params.get('lesson');
+    const showQuiz = params.get('quiz') === 'true';
 
     if (!courseId) { window.location.href = 'explore.html'; return; }
 
@@ -27,6 +32,10 @@ async function loadCourse() {
         const lessonsRes = await api.getLessons(courseId);
         lessons = lessonsRes.success ? lessonsRes.lessons : [];
 
+        // Load quiz
+        const quizRes = await api.getQuiz(courseId);
+        if (quizRes.success) quiz = quizRes.quiz;
+
         if (isAuthenticated()) {
             try {
                 const purchRes = await api.getMyPurchaseIds();
@@ -37,13 +46,21 @@ async function loadCourse() {
                     if (progressRes.success) {
                         completedLessonIds = progressRes.progress.completedLessonIds;
                     }
+
+                    // Check if quiz already passed
+                    const attemptsRes = await api.getQuizAttempts(courseId);
+                    if (attemptsRes.success && attemptsRes.attempts.some(a => a.passed)) {
+                        quizPassed = true;
+                    }
                 }
             } catch (e) { }
         }
 
         renderSidebar();
 
-        if (lessonId && lessons.length > 0 && isPurchased) {
+        if (showQuiz && quiz && isPurchased) {
+            showQuizSection();
+        } else if (lessonId && lessons.length > 0 && isPurchased) {
             await loadLesson(parseInt(lessonId));
         } else {
             renderOverview();
@@ -71,12 +88,14 @@ function renderSidebar() {
         : `${totalLessons} lessons`;
 
     const nav = document.getElementById('lessonsNav');
-    nav.innerHTML = `
-        <li class="lesson-nav-item ${!currentLesson ? 'active' : ''}" onclick="showOverview()">
+    let navHtml = `
+        <li class="lesson-nav-item ${!currentLesson && !document.getElementById('quizContent')?.style.display?.includes('block') ? 'active' : ''}" onclick="showOverview()">
             <span class="lesson-nav-number">📖</span>
             <span class="lesson-nav-title">Course Overview</span>
         </li>
-    ` + lessons.map((l, i) => {
+    `;
+
+    navHtml += lessons.map((l, i) => {
         const isCompleted = completedLessonIds.includes(l.id);
         const isLocked = !isPurchased;
         return `
@@ -86,6 +105,19 @@ function renderSidebar() {
             <span class="lesson-nav-title">${escapeHtml(l.title)}</span>
         </li>`;
     }).join('');
+
+    // Add quiz link if quiz exists
+    if (quiz && quiz.questions && quiz.questions.length > 0) {
+        const allLessonsComplete = completedLessonIds.length === lessons.length && lessons.length > 0;
+        navHtml += `
+        <li class="lesson-nav-item quiz-link ${!isPurchased ? 'locked' : ''}" 
+            onclick="${isPurchased && allLessonsComplete ? 'showQuizSection()' : isPurchased ? 'showNeedAllLessons()' : 'showEnrollPrompt()'}">
+            <span class="lesson-nav-number">${quizPassed ? '✓' : '📝'}</span>
+            <span class="lesson-nav-title">Final Quiz ${quizPassed ? '(Passed)' : ''}</span>
+        </li>`;
+    }
+
+    nav.innerHTML = navHtml;
 
     document.getElementById('mobileSelect').innerHTML = `
         <option value="">Course Overview</option>
@@ -111,11 +143,16 @@ function renderOverview() {
         document.getElementById('learnSection').style.display = 'none';
     }
 
-    const price = parseFloat(course.price);
-    document.getElementById('coursePrice').textContent = price === 0 ? 'Free' : '$' + price.toFixed(2);
+    // Show points instead of price
+    const isFree = course.is_free;
+    const pointCost = course.point_cost || 0;
+    document.getElementById('coursePrice').innerHTML = isFree
+        ? '<span style="color:var(--green)">Free</span><br><small style="font-size:14px;color:var(--text-secondary)">+500 points on completion</small>'
+        : `<span style="color:var(--yellow)"> ${pointCost} points</span><br><small style="font-size:14px;color:var(--text-secondary)">+${Math.round(pointCost * 1.25)} points on completion</small>`;
 
     document.getElementById('overviewContent').style.display = 'block';
     document.getElementById('lessonContent').style.display = 'none';
+    document.getElementById('quizContent').style.display = 'none';
     currentLesson = null;
     renderSidebar();
 }
@@ -134,6 +171,7 @@ async function loadLesson(lessonId) {
 
         document.getElementById('overviewContent').style.display = 'none';
         document.getElementById('lessonContent').style.display = 'block';
+        document.getElementById('quizContent').style.display = 'none';
 
         const videoContainer = document.getElementById('lessonVideo');
         if (currentLesson.video_url) {
@@ -230,16 +268,33 @@ function showEnrollPrompt() {
     document.getElementById('enrollBtn').focus();
 }
 
+function showNeedAllLessons() {
+    showToast('Complete all lessons before taking the quiz', 'error');
+}
+
 function updateEnrollButton() {
     const btn = document.getElementById('enrollBtn');
     const mainBtn = document.getElementById('mainEnrollBtn');
 
     if (isPurchased) {
-        const nextLesson = lessons.find(l => !completedLessonIds.includes(l.id)) || lessons[0];
-        btn.textContent = lessons.length ? 'Continue Learning' : 'Enrolled ✓';
-        btn.onclick = () => { if (nextLesson) navigateToLesson(nextLesson.id); };
-        mainBtn.textContent = lessons.length ? 'Continue Learning' : 'Enrolled ✓';
-        mainBtn.onclick = () => { if (nextLesson) navigateToLesson(nextLesson.id); };
+        if (quizPassed) {
+            btn.textContent = '✓ Course Completed';
+            btn.disabled = true;
+            btn.className = 'btn btn-success';
+            mainBtn.textContent = '✓ Course Completed';
+            mainBtn.className = 'btn btn-success btn-lg';
+        } else {
+            const nextLesson = lessons.find(l => !completedLessonIds.includes(l.id)) || lessons[0];
+            btn.textContent = lessons.length ? 'Continue Learning' : 'Enrolled ✓';
+            btn.onclick = () => { if (nextLesson) navigateToLesson(nextLesson.id); };
+            mainBtn.textContent = lessons.length ? 'Continue Learning' : 'Enrolled ✓';
+            mainBtn.onclick = () => { if (nextLesson) navigateToLesson(nextLesson.id); };
+        }
+    } else {
+        const isFree = course.is_free;
+        const cost = course.point_cost || 0;
+        btn.textContent = isFree ? 'Enroll Free' : `Enroll for ${cost} points`;
+        mainBtn.textContent = isFree ? 'Enroll for Free' : `Enroll for ${cost} points`;
     }
 }
 
@@ -256,21 +311,134 @@ async function handleEnroll() {
     }
 
     try {
-        const res = await api.purchaseCourse(course.id);
+        const res = await api.purchaseWithPoints(course.id);
         if (res.success) {
             isPurchased = true;
             updateEnrollButton();
             renderSidebar();
-            showToast('Enrolled successfully!');
+            showToast(res.message || 'Enrolled successfully!');
+            updateNavbar(); // Refresh points display
         } else {
             showToast(res.message || 'Failed to enroll', 'error');
         }
     } catch (e) { showToast('Error', 'error'); }
 }
 
+// Quiz Functions
+function showQuizSection() {
+    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+        showToast('No quiz available', 'error');
+        return;
+    }
+
+    document.getElementById('overviewContent').style.display = 'none';
+    document.getElementById('lessonContent').style.display = 'none';
+    document.getElementById('quizContent').style.display = 'block';
+    currentLesson = null;
+
+    document.getElementById('quizTitle').textContent = quiz.title || 'Final Quiz';
+    document.getElementById('quizInfo').textContent = `Answer all ${quiz.questions.length} questions. You need ${quiz.passing_score}% to pass.`;
+
+    selectedAnswers = {};
+
+    const questionsHtml = quiz.questions.map((q, i) => `
+        <div class="quiz-question" data-question-id="${q.id}">
+            <div class="quiz-question-text">
+                <span class="quiz-question-number">Question ${i + 1}:</span> ${escapeHtml(q.question)}
+            </div>
+            <div class="quiz-options">
+                ${q.options.map((opt, j) => `
+                    <label class="quiz-option" onclick="selectAnswer(${q.id}, ${j}, this)">
+                        <input type="radio" name="q${q.id}" value="${j}">
+                        <span class="quiz-option-radio"></span>
+                        <span class="quiz-option-text">${escapeHtml(opt)}</span>
+                    </label>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+
+    document.getElementById('quizQuestions').innerHTML = questionsHtml;
+    document.getElementById('quizResult').classList.add('hidden');
+    document.getElementById('submitQuizBtn').style.display = 'inline-flex';
+
+    window.scrollTo(0, 0);
+    renderSidebar();
+}
+
+function selectAnswer(questionId, optionIndex, element) {
+    selectedAnswers[questionId] = optionIndex;
+
+    // Update UI
+    element.closest('.quiz-options').querySelectorAll('.quiz-option').forEach(el => el.classList.remove('selected'));
+    element.classList.add('selected');
+}
+
+async function submitQuiz() {
+    if (!quiz) return;
+
+    // Check all questions answered
+    const unanswered = quiz.questions.filter(q => selectedAnswers[q.id] === undefined);
+    if (unanswered.length > 0) {
+        showToast(`Please answer all questions (${unanswered.length} remaining)`, 'error');
+        return;
+    }
+
+    const btn = document.getElementById('submitQuizBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+        const res = await api.submitQuiz(quiz.id, selectedAnswers);
+
+        const resultEl = document.getElementById('quizResult');
+        resultEl.classList.remove('hidden', 'passed', 'failed');
+        resultEl.classList.add(res.passed ? 'passed' : 'failed');
+
+        resultEl.innerHTML = `
+            <div class="quiz-result-icon">${res.passed ? '🎉' : '😔'}</div>
+            <div class="quiz-result-score">${res.score}%</div>
+            <div class="quiz-result-message">${res.message}</div>
+            <div class="quiz-result-details">${res.correct} out of ${res.total} correct</div>
+            ${res.passed ? `<button class="btn btn-primary btn-lg" onclick="claimReward()" style="margin-top:var(--space-lg)">🎁 Claim Your Reward</button>` :
+                `<button class="btn btn-secondary" onclick="showQuizSection()" style="margin-top:var(--space-lg)">Try Again</button>`}
+        `;
+
+        if (res.passed) {
+            quizPassed = true;
+            document.getElementById('submitQuizBtn').style.display = 'none';
+        }
+
+        renderSidebar();
+    } catch (e) {
+        showToast('Error submitting quiz', 'error');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Submit Quiz';
+}
+
+async function claimReward() {
+    try {
+        const res = await api.completeCourse(course.id);
+        if (res.success) {
+            showToast(res.message || `You earned ${res.pointsEarned} points!`);
+            updateNavbar(); // Refresh points
+            updateEnrollButton();
+        } else {
+            showToast(res.message || 'Failed to claim reward', 'error');
+        }
+    } catch (e) {
+        showToast('Error claiming reward', 'error');
+    }
+}
+
 window.onpopstate = () => {
     const params = new URLSearchParams(window.location.search);
     const lessonId = params.get('lesson');
-    if (lessonId && isPurchased) loadLesson(parseInt(lessonId));
+    const showQuiz = params.get('quiz') === 'true';
+
+    if (showQuiz && quiz && isPurchased) showQuizSection();
+    else if (lessonId && isPurchased) loadLesson(parseInt(lessonId));
     else renderOverview();
 };

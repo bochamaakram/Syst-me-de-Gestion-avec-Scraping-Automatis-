@@ -7,6 +7,7 @@
     <title>Course | knowway</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/course.css">
+    <link rel="stylesheet" href="css/quiz.css">
 </head>
 
 <body>
@@ -96,6 +97,22 @@
                             </div>
                             <span>→</span>
                         </a>
+                    </div>
+                </div>
+
+                <!-- Quiz Section -->
+                <div id="quizContent" style="display:none">
+                    <div class="quiz-container">
+                        <div class="quiz-header">
+                            <h2 id="quizTitle">Final Quiz</h2>
+                            <p id="quizInfo">Answer all questions to complete this course. You need 85% to pass.</p>
+                        </div>
+                        <div id="quizQuestions"></div>
+                        <div class="quiz-actions">
+                            <button id="submitQuizBtn" class="btn btn-primary btn-lg" onclick="submitQuiz()">Submit
+                                Quiz</button>
+                        </div>
+                        <div id="quizResult" class="quiz-result hidden"></div>
                     </div>
                 </div>
             </main>

@@ -78,5 +78,17 @@ const api = {
     // Progress
     getCourseProgress: (courseId) => api.request(`/progress/course/${courseId}`),
     markLessonComplete: (lessonId) => api.request(`/progress/lesson/${lessonId}/complete`, { method: 'POST' }),
-    markLessonIncomplete: (lessonId) => api.request(`/progress/lesson/${lessonId}/complete`, { method: 'DELETE' })
+    markLessonIncomplete: (lessonId) => api.request(`/progress/lesson/${lessonId}/complete`, { method: 'DELETE' }),
+
+    // Points
+    getPointsBalance: () => api.request('/points/balance'),
+    getPointsHistory: () => api.request('/points/history'),
+    purchaseWithPoints: (courseId) => api.request(`/points/purchase/${courseId}`, { method: 'POST' }),
+    completeCourse: (courseId) => api.request(`/points/complete/${courseId}`, { method: 'POST' }),
+
+    // Quiz
+    getQuiz: (courseId) => api.request(`/quiz/course/${courseId}`),
+    submitQuiz: (quizId, answers) => api.request(`/quiz/${quizId}/submit`, { method: 'POST', body: JSON.stringify({ answers }) }),
+    getQuizAttempts: (courseId) => api.request(`/quiz/attempts/${courseId}`),
+    saveQuiz: (courseId, data) => api.request(`/quiz/course/${courseId}`, { method: 'POST', body: JSON.stringify(data) })
 };

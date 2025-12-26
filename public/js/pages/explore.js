@@ -108,8 +108,9 @@ function renderCourses() {
     document.getElementById('emptyState').classList.add('hidden');
 
     grid.innerHTML = courses.map(c => {
-        const hasDiscount = c.discount_price && parseFloat(c.discount_price) < parseFloat(c.price);
         const isFavorite = favoriteIds.includes(c.id);
+        const isFree = c.is_free;
+        const pointCost = c.point_cost || 0;
 
         return `
         <div class="card">
@@ -121,8 +122,7 @@ function renderCourses() {
                     <p class="card-instructor">${escapeHtml(c.author || 'Instructor')}</p>
                     <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">${formatCategory(c.category)} · ${c.level} · ${c.duration || 0}h</p>
                     <div class="card-price">
-                        <span class="price-current">${hasDiscount ? '$' + parseFloat(c.discount_price).toFixed(2) : (parseFloat(c.price) === 0 ? 'Free' : '$' + parseFloat(c.price).toFixed(2))}</span>
-                        ${hasDiscount ? `<span class="price-original">$${parseFloat(c.price).toFixed(2)}</span>` : ''}
+                        <span class="price-current" style="${isFree ? 'color:var(--green)' : 'color:var(--yellow)'}">${isFree ? 'Free' : ' ' + pointCost + ' pts'}</span>
                     </div>
                 </div>
             </div>

@@ -1,6 +1,11 @@
 -- Course Management Application Database Schema
 -- Run: mysql -u root -proot-pass course_management < schema.sql
 
+DROP TABLE IF EXISTS point_transactions;
+DROP TABLE IF EXISTS quiz_attempts;
+DROP TABLE IF EXISTS quiz_questions;
+DROP TABLE IF EXISTS course_quizzes;
+DROP TABLE IF EXISTS lesson_progress;
 DROP TABLE IF EXISTS favorites;
 DROP TABLE IF EXISTS purchases;
 DROP TABLE IF EXISTS course_lessons;
@@ -13,6 +18,7 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role ENUM('super_admin', 'teacher', 'learner') NOT NULL DEFAULT 'learner',
+    points INT DEFAULT 0,
     avatar_url VARCHAR(500),
     bio TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -26,8 +32,9 @@ CREATE TABLE courses (
     short_description VARCHAR(500),
     category ENUM('dev', 'design', 'marketing') NOT NULL DEFAULT 'dev',
     duration INT NOT NULL DEFAULT 0,
-    price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-    discount_price DECIMAL(10, 2) DEFAULT NULL,
+    is_free BOOLEAN DEFAULT TRUE,
+    point_cost INT DEFAULT 0,
+    points_reward INT DEFAULT 500,
     level ENUM('beginner', 'intermediate', 'advanced') NOT NULL DEFAULT 'beginner',
     status ENUM('active', 'archived', 'draft') NOT NULL DEFAULT 'active',
     image_url VARCHAR(500),
@@ -57,8 +64,10 @@ CREATE TABLE purchases (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     course_id INT NOT NULL,
-    price_paid DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    points_paid INT NOT NULL DEFAULT 0,
     progress INT DEFAULT 0,
+    quiz_passed BOOLEAN DEFAULT FALSE,
+    quiz_score INT DEFAULT 0,
     completed_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_purchase (user_id, course_id),
@@ -119,6 +128,56 @@ CREATE TABLE lesson_progress (
 
 CREATE INDEX idx_progress_user ON lesson_progress(user_id);
 CREATE INDEX idx_progress_course ON lesson_progress(user_id, course_id);
+
+-- Course Quizzes
+CREATE TABLE course_quizzes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    course_id INT NOT NULL,
+    title VARCHAR(255) DEFAULT 'Final Quiz',
+    passing_score INT DEFAULT 85,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+);
+
+CREATE TABLE quiz_questions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    quiz_id INT NOT NULL,
+    question TEXT NOT NULL,
+    options JSON NOT NULL,
+    correct_index INT NOT NULL,
+    order_index INT DEFAULT 0,
+    FOREIGN KEY (quiz_id) REFERENCES course_quizzes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE quiz_attempts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    quiz_id INT NOT NULL,
+    course_id INT NOT NULL,
+    score INT NOT NULL,
+    passed BOOLEAN DEFAULT FALSE,
+    answers JSON,
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (quiz_id) REFERENCES course_quizzes(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+);
+
+CREATE TABLE point_transactions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    amount INT NOT NULL,
+    type ENUM('course_complete', 'course_purchase', 'bonus', 'refund') NOT NULL,
+    course_id INT,
+    description VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_quiz_course ON course_quizzes(course_id);
+CREATE INDEX idx_questions_quiz ON quiz_questions(quiz_id);
+CREATE INDEX idx_attempts_user ON quiz_attempts(user_id);
+CREATE INDEX idx_transactions_user ON point_transactions(user_id);
 
 SELECT 'Schema created successfully!' as message;
 
