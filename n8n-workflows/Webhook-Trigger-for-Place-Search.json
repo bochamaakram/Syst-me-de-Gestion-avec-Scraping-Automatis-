@@ -2,69 +2,70 @@
     "nodes": [
         {
             "parameters": {
-                "httpMethod": "POST",
-                "path": "search-places",
-                "responseMode": "responseNode",
-                "options": {}
-            },
-            "id": "3c535e92-41f0-42f4-8c78-c80b05839713",
-            "name": "Webhook",
-            "type": "n8n-nodes-base.webhook",
-            "typeVersion": 1,
-            "position": [
-                1056,
-                544
-            ],
-            "webhookId": "66956b3c-59e4-4e3b-a5c5-08c60e15893f"
-        },
-        {
-            "parameters": {
-                "authentication": "queryAuth",
-                "url": "https://serpapi.com/search.json",
-                "options": {},
-                "queryParametersUi": {
-                    "parameter": [
+                "values": {
+                    "string": [
                         {
-                            "name": "engine",
-                            "value": "google_maps"
+                            "name": "Username",
+                            "value": "={{ $json.body.username }}"
                         },
                         {
-                            "name": "q",
-                            "value": "={{ $json.body.keyword }} in {{ $json.body.city }}"
+                            "name": "Email",
+                            "value": "={{ $json.body.email }}"
                         },
                         {
-                            "name": "type",
-                            "value": "search"
+                            "name": "Keyword",
+                            "value": "={{ $json.body.keyword }}"
+                        },
+                        {
+                            "name": "City",
+                            "value": "={{ $json.body.city }}"
+                        },
+                        {
+                            "name": "Search_Date",
+                            "value": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}"
                         }
                     ]
-                }
+                },
+                "options": {}
             },
-            "id": "ea90415a-e010-455a-95d0-ddb6361c73e2",
-            "name": "SerpAPI Request",
-            "type": "n8n-nodes-base.httpRequest",
+            "id": "23460a08-ef2f-44f8-a923-98bc885aef1b",
+            "name": "Prepare Log Data",
+            "type": "n8n-nodes-base.set",
             "typeVersion": 1,
             "position": [
-                1280,
-                544
-            ],
-            "credentials": {
-                "httpQueryAuth": {
-                    "id": "L9Y5M4JdMqoZYI3E",
-                    "name": "Query Auth account 2"
-                }
-            }
+                1248,
+                960
+            ]
         },
         {
             "parameters": {
-                "jsCode": "// Extract local results from SerpAPI response\nconst results = $input.first().json.local_results || [];\n\nreturn results.map(place => ({\n  json: {\n    title: place.title,\n    address: place.address,\n    phone: place.phone || null,\n    website: place.website || null,\n    rating: place.rating || null,\n    reviews: place.reviews || 0,\n    type: place.type || null,\n    place_id: place.place_id,\n    gps_coordinates: place.gps_coordinates,\n    hours: place.hours || null,\n    thumbnail: place.thumbnail || null\n  }\n}));"
+                "respondWith": "allIncomingItems",
+                "options": {
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Access-Control-Allow-Origin",
+                                "value": "*"
+                            },
+                            {
+                                "name": "Access-Control-Allow-Methods",
+                                "value": "POST, OPTIONS"
+                            },
+                            {
+                                "name": "Access-Control-Allow-Headers",
+                                "value": "Content-Type"
+                            }
+                        ]
+                    }
+                }
             },
-            "id": "a344c4be-7acb-4954-a626-c4a88a9eb750",
-            "name": "Extract Places",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
+            "id": "cf7254c7-bb11-47c8-a698-874919459166",
+            "name": "Respond to Webhook1",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
             "position": [
-                1504,
-                544
+                1904,
+                736
             ]
         },
         {
@@ -91,86 +92,161 @@
                 },
                 "options": {}
             },
-            "id": "5a595507-d79a-423e-ae2f-f78e738fb2fb",
-            "name": "Filter Valid Places",
+            "id": "2b81dbe5-1001-4e63-91cd-ddd2d075ff2c",
+            "name": "Filter Valid Places1",
             "type": "n8n-nodes-base.filter",
             "typeVersion": 2,
             "position": [
-                1728,
-                544
+                1696,
+                736
             ]
         },
         {
             "parameters": {
-                "respondWith": "allIncomingItems",
-                "options": {
-                    "responseHeaders": {
-                        "entries": [
-                            {
-                                "name": "Access-Control-Allow-Origin",
-                                "value": "*"
-                            },
-                            {
-                                "name": "Access-Control-Allow-Methods",
-                                "value": "POST, OPTIONS"
-                            },
-                            {
-                                "name": "Access-Control-Allow-Headers",
-                                "value": "Content-Type"
-                            }
-                        ]
-                    }
+                "jsCode": "// Extract local results from SerpAPI response\nconst results = $input.first().json.local_results || [];\n\nreturn results.map(place => ({\n  json: {\n    title: place.title,\n    address: place.address,\n    phone: place.phone || null,\n    website: place.website || null,\n    rating: place.rating || null,\n    reviews: place.reviews || 0,\n    type: place.type || null,\n    place_id: place.place_id,\n    gps_coordinates: place.gps_coordinates,\n    hours: place.hours || null,\n    thumbnail: place.thumbnail || null\n  }\n}));"
+            },
+            "id": "9366d455-9869-41a9-a109-f9d603da4da6",
+            "name": "Extract Places1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1472,
+                736
+            ]
+        },
+        {
+            "parameters": {
+                "authentication": "queryAuth",
+                "url": "https://serpapi.com/search.json",
+                "options": {},
+                "queryParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "engine",
+                            "value": "google_maps"
+                        },
+                        {
+                            "name": "q",
+                            "value": "={{ $json.body.keyword }} in {{ $json.body.city }}"
+                        },
+                        {
+                            "name": "type",
+                            "value": "search"
+                        }
+                    ]
                 }
             },
-            "id": "e2dc5cd9-4c5a-4d39-ad34-0f2c5696c109",
-            "name": "Respond to Webhook",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "id": "a53e98ee-1447-4506-9ebb-52d70064cc77",
+            "name": "SerpAPI Request1",
+            "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 1,
             "position": [
-                1936,
-                544
-            ]
+                1248,
+                736
+            ],
+            "credentials": {
+                "httpQueryAuth": {
+                    "id": "L9Y5M4JdMqoZYI3E",
+                    "name": "Query Auth account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "search-places",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "5b8653b2-aa0d-4a0f-94ed-e38e3bfdfafe",
+            "name": "Webhook1",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                1024,
+                736
+            ],
+            "webhookId": "66956b3c-59e4-4e3b-a5c5-08c60e15893f"
+        },
+        {
+            "parameters": {
+                "authentication": "oAuth2",
+                "operation": "append",
+                "sheetId": "1ypqcc84g6NiqzNvXOvO95-O_ABAjCH5yXH3lVowObIw",
+                "range": "A:E",
+                "options": {}
+            },
+            "name": "Google Sheets1",
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 1,
+            "position": [
+                1472,
+                960
+            ],
+            "id": "bc4cd816-bcce-43b2-a314-b2bb863cb3f2",
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": "wgt41svRwRiew5Eu",
+                    "name": "Google Sheets account 6"
+                }
+            }
         }
     ],
     "connections": {
-        "Webhook": {
+        "Prepare Log Data": {
             "main": [
                 [
                     {
-                        "node": "SerpAPI Request",
+                        "node": "Google Sheets1",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "SerpAPI Request": {
+        "Filter Valid Places1": {
             "main": [
                 [
                     {
-                        "node": "Extract Places",
+                        "node": "Respond to Webhook1",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Extract Places": {
+        "Extract Places1": {
             "main": [
                 [
                     {
-                        "node": "Filter Valid Places",
+                        "node": "Filter Valid Places1",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Filter Valid Places": {
+        "SerpAPI Request1": {
             "main": [
                 [
                     {
-                        "node": "Respond to Webhook",
+                        "node": "Extract Places1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Webhook1": {
+            "main": [
+                [
+                    {
+                        "node": "SerpAPI Request1",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Prepare Log Data",
                         "type": "main",
                         "index": 0
                     }

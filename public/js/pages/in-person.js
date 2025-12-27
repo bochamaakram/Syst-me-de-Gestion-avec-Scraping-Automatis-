@@ -57,12 +57,41 @@ async function handleSearch(e) {
     loadingState.classList.remove('hidden');
 
     try {
+        // Get user data from cookie (with localStorage fallback)
+        let user = {};
+        const cookieMatch = document.cookie.match(/user_data=([^;]+)/);
+        if (cookieMatch) {
+            try {
+                user = JSON.parse(decodeURIComponent(cookieMatch[1]));
+            } catch (e) {
+                console.error('Error parsing user cookie:', e);
+            }
+        }
+        // Fallback to localStorage if cookie not found
+        if (!user.username) {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                try {
+                    user = JSON.parse(userStr);
+                } catch (e) {
+                    console.error('Error parsing localStorage user:', e);
+                }
+            }
+        }
+
+        const requestBody = {
+            keyword,
+            city,
+            username: user.username || '',
+            email: user.email || ''
+        };
+
         const response = await fetch(N8N_WEBHOOK_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ keyword, city })
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
