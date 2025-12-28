@@ -50,6 +50,14 @@ A full-stack web application for managing online courses with user authenticatio
 - User search logging to Google Sheets
 - Quick search tags for common topics
 
+### 💬 Course Chat Room
+- Real-time discussion for enrolled users
+- Per-course chat rooms
+- New message notification badge
+- Mobile floating chat button
+- Auto-refresh messages
+- Persistent read status across sessions
+
 ### ❤️ Favorites System
 - Add/remove courses to favorites
 - View all favorited courses
@@ -234,6 +242,12 @@ A full-stack web application for managing online courses with user authenticatio
 | GET | `/api/users` | Get all users (admin) |
 | GET | `/api/users/my-role` | Get current user role |
 | PUT | `/api/users/:id/role` | Update user role |
+
+### Chat
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/chat/:courseId` | Get chat messages (enrolled only) |
+| POST | `/api/chat/:courseId` | Send chat message (enrolled only) |
 
 ## 🔗 n8n Integration
 
