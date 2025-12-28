@@ -257,7 +257,7 @@ The In-Person course search feature uses an n8n webhook to:
 3. Log searches to Google Sheets
 4. Return filtered place results
 
-Webhook URL: `https://n8n.zackdev.io/webhook/search-places`
+Webhook URL: `https://n8n.zackdev.io/webhook/search-logs`
 
 ## 🔒 Security Features
 
