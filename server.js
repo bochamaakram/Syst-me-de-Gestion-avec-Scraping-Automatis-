@@ -32,6 +32,10 @@ app.use(cors());
 // Parse JSON request bodies (for POST/PUT requests)
 app.use(express.json());
 
+// Initialize Passport for Google OAuth
+const { passport } = require('./server/controllers/googleAuthController');
+app.use(passport.initialize());
+
 // Serve static files from 'public' directory (HTML, CSS, JS, images)
 app.use(express.static(path.join(__dirname, 'public')));
 

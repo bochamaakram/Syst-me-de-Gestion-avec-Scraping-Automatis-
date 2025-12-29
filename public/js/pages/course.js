@@ -191,8 +191,9 @@ async function loadLesson(lessonId) {
             <h1>${escapeHtml(currentLesson.title)}</h1>
             ${parseMarkdown(currentLesson.content || '')}
             <div class="lesson-complete-section">
-                <button id="completeBtn" class="btn ${isCompleted ? 'btn-secondary' : 'btn-primary'}" onclick="toggleLessonComplete()">
-                    ${isCompleted ? 'Completed' : 'Mark as Complete'}
+                <button id="completeBtn" class="btn ${isCompleted ? 'btn-success' : 'btn-primary'}" 
+                    onclick="markLessonComplete()" ${isCompleted ? 'disabled' : ''}>
+                    ${isCompleted ? '✓ Completed' : 'Mark as Complete'}
                 </button>
             </div>
         `;
@@ -223,37 +224,31 @@ async function loadLesson(lessonId) {
     } catch (e) { showToast('Error loading lesson', 'error'); }
 }
 
-async function toggleLessonComplete() {
+async function markLessonComplete() {
     if (!currentLesson) return;
 
-    const isCompleted = completedLessonIds.includes(currentLesson.id);
+    // If already completed, do nothing (button should be disabled)
+    if (completedLessonIds.includes(currentLesson.id)) return;
+
     const btn = document.getElementById('completeBtn');
     btn.disabled = true;
 
     try {
-        let res;
-        if (isCompleted) {
-            res = await api.markLessonIncomplete(currentLesson.id);
-            if (res.success) {
-                completedLessonIds = completedLessonIds.filter(id => id !== currentLesson.id);
-                btn.textContent = 'Mark as Complete';
-                btn.className = 'btn btn-primary';
-            }
+        const res = await api.markLessonComplete(currentLesson.id);
+        if (res.success) {
+            completedLessonIds.push(currentLesson.id);
+            btn.textContent = '✓ Completed';
+            btn.className = 'btn btn-success';
+            showToast('Lesson completed!');
+            renderSidebar();
         } else {
-            res = await api.markLessonComplete(currentLesson.id);
-            if (res.success) {
-                completedLessonIds.push(currentLesson.id);
-                btn.textContent = 'Completed';
-                btn.className = 'btn btn-secondary';
-                showToast('Lesson completed!');
-            }
+            btn.disabled = false;
+            showToast('Error completing lesson', 'error');
         }
-        renderSidebar();
     } catch (e) {
+        btn.disabled = false;
         showToast('Error updating progress', 'error');
     }
-
-    btn.disabled = false;
 }
 
 function navigateToLesson(lessonId) {
