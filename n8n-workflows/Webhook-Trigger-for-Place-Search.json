@@ -33,8 +33,8 @@
             "type": "n8n-nodes-base.set",
             "typeVersion": 1,
             "position": [
-                1248,
-                960
+                1280,
+                848
             ]
         },
         {
@@ -64,8 +64,8 @@
             "type": "n8n-nodes-base.respondToWebhook",
             "typeVersion": 1,
             "position": [
-                1904,
-                736
+                2160,
+                592
             ]
         },
         {
@@ -97,7 +97,7 @@
             "type": "n8n-nodes-base.filter",
             "typeVersion": 2,
             "position": [
-                1696,
+                1920,
                 736
             ]
         },
@@ -110,7 +110,7 @@
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
-                1472,
+                1728,
                 736
             ]
         },
@@ -141,7 +141,7 @@
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 1,
             "position": [
-                1248,
+                1520,
                 736
             ],
             "credentials": {
@@ -163,8 +163,8 @@
             "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
             "position": [
-                1024,
-                736
+                1088,
+                848
             ],
             "webhookId": "66956b3c-59e4-4e3b-a5c5-08c60e15893f"
         },
@@ -190,6 +190,266 @@
                     "name": "Google Sheets account 6"
                 }
             }
+        },
+        {
+            "parameters": {
+                "tableId": "search_logs",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "username",
+                            "fieldValue": "={{ $json.body.username }}"
+                        },
+                        {
+                            "fieldId": "email",
+                            "fieldValue": "={{ $json.body.email }}"
+                        },
+                        {
+                            "fieldId": "keyword",
+                            "fieldValue": "={{ $json.body.keyword }}"
+                        },
+                        {
+                            "fieldId": "city",
+                            "fieldValue": "={{ $json.body.city }}"
+                        },
+                        {
+                            "fieldId": "search_date",
+                            "fieldValue": "={{ $json.Search_Date }}"
+                        }
+                    ]
+                }
+            },
+            "id": "399f40cd-4015-4351-9310-c8660950e74c",
+            "name": "Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1664,
+                960
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "527DOcVCm33uSJ0D",
+                    "name": "Supabase account 5"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "tableId": "scraped_data",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "title",
+                            "fieldValue": "={{ $json.title }}"
+                        },
+                        {
+                            "fieldId": "address",
+                            "fieldValue": "={{ $json.address }}"
+                        },
+                        {
+                            "fieldId": "phone",
+                            "fieldValue": "={{ $json.phone }}"
+                        },
+                        {
+                            "fieldId": "website",
+                            "fieldValue": "={{ $json.website }}"
+                        },
+                        {
+                            "fieldId": "rating",
+                            "fieldValue": "={{ $json.rating }}"
+                        },
+                        {
+                            "fieldId": "reviews",
+                            "fieldValue": "={{ $json.reviews }}"
+                        },
+                        {
+                            "fieldId": "type",
+                            "fieldValue": "={{ $json.type }}"
+                        },
+                        {
+                            "fieldId": "place_id",
+                            "fieldValue": "={{ $json.place_id }}"
+                        },
+                        {
+                            "fieldId": "gps_coordinates",
+                            "fieldValue": "={{ $json.gps_coordinates }}"
+                        },
+                        {
+                            "fieldId": "hours",
+                            "fieldValue": "={{ $json.hours }}"
+                        },
+                        {
+                            "fieldId": "thumbnail",
+                            "fieldValue": "={{ $json.thumbnail }}"
+                        }
+                    ]
+                }
+            },
+            "id": "8d1faae9-d6ae-432f-8435-f96660b38e68",
+            "name": "Supabase1",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                2160,
+                736
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "527DOcVCm33uSJ0D",
+                    "name": "Supabase account 5"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "append",
+                "documentId": {
+                    "__rl": true,
+                    "value": "https://docs.google.com/spreadsheets/d/1ypqcc84g6NiqzNvXOvO95-O_ABAjCH5yXH3lVowObIw/edit?gid=1510429076#gid=1510429076",
+                    "mode": "url"
+                },
+                "sheetName": {
+                    "__rl": true,
+                    "value": "https://docs.google.com/spreadsheets/d/1ypqcc84g6NiqzNvXOvO95-O_ABAjCH5yXH3lVowObIw/edit?gid=1510429076#gid=1510429076",
+                    "mode": "url"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "title": "={{ $json.title }}",
+                        "address": "={{ $json.address }}",
+                        "phone": "=\"{{ $json.phone}}\"",
+                        "website": "={{ $json.website }}",
+                        "rating": "={{ $json.rating }}",
+                        "reviews": "={{ $json.reviews }}",
+                        "type": "={{ $json.type }}",
+                        "place_id": "={{ $json.place_id }}",
+                        "gps_coordinates": "={{ $json.gps_coordinates }}",
+                        "hours": "={{ $json.hours }}",
+                        "thumbnail": "={{ $json.thumbnail }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "title",
+                            "displayName": "title",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "address",
+                            "displayName": "address",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "phone",
+                            "displayName": "phone",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "website",
+                            "displayName": "website",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "rating",
+                            "displayName": "rating",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "reviews",
+                            "displayName": "reviews",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "type",
+                            "displayName": "type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "place_id",
+                            "displayName": "place_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "gps_coordinates",
+                            "displayName": "gps_coordinates",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "hours",
+                            "displayName": "hours",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "thumbnail",
+                            "displayName": "thumbnail",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.7,
+            "position": [
+                2160,
+                912
+            ],
+            "id": "7fdc065c-7b70-4df8-8886-840b6d0e4864",
+            "name": "Append row in sheet",
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": "wgt41svRwRiew5Eu",
+                    "name": "Google Sheets account 6"
+                }
+            }
         }
     ],
     "connections": {
@@ -200,8 +460,18 @@
                         "node": "Google Sheets1",
                         "type": "main",
                         "index": 0
+                    },
+                    {
+                        "node": "SerpAPI Request1",
+                        "type": "main",
+                        "index": 0
                     }
                 ]
+            ]
+        },
+        "Respond to Webhook1": {
+            "main": [
+                []
             ]
         },
         "Filter Valid Places1": {
@@ -209,6 +479,16 @@
                 [
                     {
                         "node": "Respond to Webhook1",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Supabase1",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Append row in sheet",
                         "type": "main",
                         "index": 0
                     }
@@ -241,12 +521,18 @@
             "main": [
                 [
                     {
-                        "node": "SerpAPI Request1",
+                        "node": "Prepare Log Data",
                         "type": "main",
                         "index": 0
-                    },
+                    }
+                ]
+            ]
+        },
+        "Google Sheets1": {
+            "main": [
+                [
                     {
-                        "node": "Prepare Log Data",
+                        "node": "Supabase",
                         "type": "main",
                         "index": 0
                     }
@@ -254,41 +540,7 @@
             ]
         }
     },
-    "pinData": {
-        "Webhook1": [
-            {
-                "headers": {
-                    "connection": "upgrade",
-                    "host": "n8n.zackdev.io",
-                    "content-length": "101",
-                    "sec-ch-ua-platform": "\"Windows\"",
-                    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
-                    "sec-ch-ua": "\"Brave\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
-                    "content-type": "application/json",
-                    "sec-ch-ua-mobile": "?0",
-                    "accept": "*/*",
-                    "sec-gpc": "1",
-                    "accept-language": "en-US,en;q=0.7",
-                    "origin": "https://knowway-eight.vercel.app",
-                    "sec-fetch-site": "cross-site",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-dest": "empty",
-                    "referer": "https://knowway-eight.vercel.app/",
-                    "accept-encoding": "gzip, deflate, br, zstd"
-                },
-                "params": {},
-                "query": {},
-                "body": {
-                    "keyword": "language school",
-                    "city": "Marrakesh",
-                    "username": "akram_bouucham",
-                    "email": "aa@knowway.com"
-                },
-                "webhookUrl": "https://n8n.zackdev.io/webhook/search-places",
-                "executionMode": "production"
-            }
-        ]
-    },
+    "pinData": {},
     "meta": {
         "templateCredsSetupCompleted": true,
         "instanceId": "6fba02c56f732391825a81b0d3eb33212632413b406e8a0f3fe5b1cfa7369a99"
