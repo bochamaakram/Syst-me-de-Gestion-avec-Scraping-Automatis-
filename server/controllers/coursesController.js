@@ -2,14 +2,19 @@ const supabase = require('../config/database');
 
 exports.getCourses = async (req, res) => {
     try {
-        const { page = 1, limit = 6, search, category, level, status } = req.query;
+        const { page = 1, limit = 6, search, category, level, status, price } = req.query;
 
-        let query = supabase.from('courses').select('*');
+        // Select courses and join with categories
+        let query = supabase.from('courses').select('*, categories(id, code, name)');
 
         if (status) query = query.eq('status', status);
-        if (category) query = query.eq('category', category);
+        if (category) query = query.eq('category_id', category);
         if (level) query = query.eq('level', level);
         if (search) query = query.ilike('title', `%${search}%`);
+
+        // Price filter
+        if (price === 'free') query = query.eq('is_free', true);
+        if (price === 'paid') query = query.eq('is_free', false);
 
         query = query.order('created_at', { ascending: false });
 
@@ -22,12 +27,17 @@ exports.getCourses = async (req, res) => {
         const userMap = {};
         users?.forEach(u => userMap[u.id] = u.username);
 
-        const coursesWithAuthor = courses.map(c => ({ ...c, author: userMap[c.user_id] || 'Unknown' }));
+        const coursesWithDetails = courses.map(c => ({
+            ...c,
+            author: userMap[c.user_id] || 'Unknown',
+            category: c.categories ? c.categories.code : 'dev', // fallback for legacy
+            category_name: c.categories ? c.categories.name : 'Unknown'
+        }));
 
         // Pagination
         const offset = (parseInt(page) - 1) * parseInt(limit);
-        const paginatedCourses = coursesWithAuthor.slice(offset, offset + parseInt(limit));
-        const totalItems = coursesWithAuthor.length;
+        const paginatedCourses = coursesWithDetails.slice(offset, offset + parseInt(limit));
+        const totalItems = coursesWithDetails.length;
         const totalPages = Math.ceil(totalItems / parseInt(limit));
 
         res.json({
@@ -43,7 +53,11 @@ exports.getCourses = async (req, res) => {
 
 exports.getCourse = async (req, res) => {
     try {
-        const { data: courses, error } = await supabase.from('courses').select('*').eq('id', req.params.id);
+        const { data: courses, error } = await supabase
+            .from('courses')
+            .select('*, categories(id, code, name)')
+            .eq('id', req.params.id);
+
         if (error) throw error;
         if (!courses || courses.length === 0) {
             return res.status(404).json({ success: false, message: 'Course not found' });
@@ -52,6 +66,12 @@ exports.getCourse = async (req, res) => {
         const course = courses[0];
         const { data: users } = await supabase.from('users').select('username').eq('id', course.user_id);
         course.author = users?.[0]?.username || 'Unknown';
+
+        // Map category details
+        if (course.categories) {
+            course.category = course.categories.code;
+            course.category_name = course.categories.name;
+        }
 
         res.json({ success: true, course });
     } catch (err) {
@@ -70,14 +90,17 @@ exports.createCourse = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Only teachers and admins can create courses' });
         }
 
-        const { title, description, short_description, category = 'dev', duration = 0, is_free = true, point_cost = 0, points_reward = 500, level = 'beginner', image_url } = req.body;
+        const { title, description, short_description, category, duration = 0, is_free = true, point_cost = 0, points_reward = 500, level = 'beginner', image_url } = req.body;
         if (!title) return res.status(400).json({ success: false, message: 'Title is required' });
+
+        // Default to category 1 (Dev) if not provided or invalid
+        const categoryId = category ? parseInt(category) : 1;
 
         const { data, error } = await supabase
             .from('courses')
             .insert({
                 title, description: description || '', short_description: short_description || '',
-                category, duration, is_free, point_cost, points_reward, level,
+                category_id: categoryId, duration, is_free, point_cost, points_reward, level,
                 image_url: image_url || null, user_id: req.user.id, status: 'active'
             })
             .select('id')
@@ -103,7 +126,7 @@ exports.updateCourse = async (req, res) => {
             title: req.body.title || c.title,
             description: req.body.description ?? c.description,
             short_description: req.body.short_description ?? c.short_description,
-            category: req.body.category || c.category,
+            category_id: req.body.category ? parseInt(req.body.category) : c.category_id,
             duration: req.body.duration ?? c.duration,
             is_free: req.body.is_free ?? c.is_free,
             point_cost: req.body.point_cost ?? c.point_cost,

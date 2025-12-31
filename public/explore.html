@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/icons.css">
     <link rel="stylesheet" href="css/explore.css">
+    <link rel="stylesheet" href="css/chatbot.css">
 </head>
 
 <body>
@@ -32,9 +33,11 @@
                 <input type="text" id="searchInput" class="filter-search" placeholder="Search courses...">
                 <select id="categoryFilter" class="filter-select">
                     <option value="">All Categories</option>
-                    <option value="dev">Development</option>
-                    <option value="design">Design</option>
-                    <option value="marketing">Marketing</option>
+                </select>
+                <select id="priceFilter" class="filter-select">
+                    <option value="">All Prices</option>
+                    <option value="free">Free</option>
+                    <option value="paid">Paid (Points)</option>
                 </select>
                 <select id="levelFilter" class="filter-select">
                     <option value="">All Levels</option>
@@ -76,6 +79,7 @@
     <script src="js/api.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/pages/explore.js"></script>
+    <script src="js/chatbot.js"></script>
 </body>
 
 </html>
