@@ -1,0 +1,77 @@
+{
+    "platform": {
+        "name": "Knowway",
+        "description": "A learning platform for online and in-person courses"
+    },
+    "pages": {
+        "/explore.html": "Browse all courses with filters",
+        "/learning.html": "View enrolled courses and progress",
+        "/course.html?id=X": "View course details, lessons, and enroll",
+        "/profile.html": "User profile, points balance, and settings",
+        "/in-person.html": "Search for in-person learning places nearby",
+        "/login.html": "Login page",
+        "/register.html": "Create new account",
+        "/admin.html": "Admin dashboard (super_admin only)",
+        "/course-editor.html?id=X": "Edit course content (teachers only)"
+    },
+    "filters": {
+        "category": {
+            "values": [
+                "dev",
+                "design",
+                "marketing"
+            ],
+            "labels": {
+                "dev": "Development",
+                "design": "Design",
+                "marketing": "Marketing"
+            }
+        },
+        "level": {
+            "values": [
+                "beginner",
+                "intermediate",
+                "advanced"
+            ]
+        },
+        "sort": {
+            "values": [
+                "newest",
+                "popular",
+                "title"
+            ],
+            "labels": {
+                "newest": "Newest First",
+                "popular": "Most Popular",
+                "title": "Alphabetical"
+            }
+        },
+        "search": "Search by course title or instructor name"
+    },
+    "pricing": {
+        "free_courses": "Courses marked as free can be enrolled without points",
+        "paid_courses": "Paid courses require points to enroll",
+        "earning_points": "Complete courses to earn points (default 500 pts per course)"
+    },
+    "features": {
+        "favorites": "Save courses to wishlist using heart icon",
+        "lessons": "Courses contain video lessons with progress tracking",
+        "quizzes": "Final quiz required to complete course (85% to pass)",
+        "chat": "Discussion chat available within enrolled courses",
+        "in_person": "Search Google Maps for nearby learning centers"
+    },
+    "user_roles": {
+        "learner": "Can browse, enroll, and take courses",
+        "teacher": "Can create and manage courses",
+        "super_admin": "Full admin access"
+    },
+    "example_queries": {
+        "find_free_courses": "Go to /explore.html and courses marked 'Free' require no points",
+        "filter_by_category": "On /explore.html use the Category dropdown (Development, Design, Marketing)",
+        "filter_by_level": "On /explore.html use the Level dropdown (Beginner, Intermediate, Advanced)",
+        "check_progress": "Go to /learning.html to see enrolled courses and completion percentage",
+        "earn_points": "Complete course lessons and pass the quiz to earn points",
+        "find_in_person": "Go to /in-person.html and search for learning places in your city",
+        "become_teacher": "Contact the super admin at aa@knowway.com to request teacher access"
+    }
+}

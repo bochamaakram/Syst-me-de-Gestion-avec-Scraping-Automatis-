@@ -36,6 +36,36 @@ app.use(express.json());
 const { passport } = require('./server/controllers/googleAuthController');
 app.use(passport.initialize());
 
+// ====================
+// SECURITY MIDDLEWARE
+// ====================
+// Block access to sensitive files and directories
+const blockedPatterns = [
+    /\.env/i,
+    /\.git/i,
+    /\.sql$/i,
+    /package\.json$/i,
+    /package-lock\.json$/i,
+    /node_modules/i,
+    /server\//i,
+    /n8n-workflows/i,
+    /\.md$/i,
+    /vercel\.json$/i,
+    /config/i
+];
+
+app.use((req, res, next) => {
+    const requestPath = req.path.toLowerCase();
+
+    // Check if request matches any blocked pattern
+    for (const pattern of blockedPatterns) {
+        if (pattern.test(requestPath)) {
+            return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+        }
+    }
+    next();
+});
+
 // Serve static files from 'public' directory (HTML, CSS, JS, images)
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -95,14 +125,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // ====================
-// SPA FALLBACK
+// 404 CATCH-ALL
 // ====================
-// Serve index.html for all non-API routes (Single Page Application support)
-// This allows client-side routing to work properly
-app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-        res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    }
+// Serve 404 page for all unknown routes
+app.use((req, res) => {
+    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
 // ====================

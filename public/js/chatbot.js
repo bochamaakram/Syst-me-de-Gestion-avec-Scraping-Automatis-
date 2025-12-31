@@ -13,9 +13,20 @@
         siteName: 'knowway',
         storageKey: 'knowway_chat_history',
         contextStorageKey: 'knowway_system_context',
+        knowledgeBaseUrl: '/js/ai-knowledge-base.json',
         n8nWebhook: 'https://n8n.zackdev.io/webhook-test/get-bot-context',
         contextCacheDuration: 60 * 60 * 1000, // 1 hour cache
-        defaultSystemPrompt: 'You are a helpful AI assistant for knowway, a learning platform. Help users navigate the app, find courses, and answer questions about features. Be concise, friendly, and helpful.'
+        defaultSystemPrompt: `You are the Knowway AI assistant. Answer in ONE concise sentence only.
+
+RULES:
+- Use ONLY the KNOWLEDGE_BASE data below to answer
+- NEVER output code, function calls, or tool syntax
+- NEVER make up URLs - only use paths from KNOWLEDGE_BASE
+- Direct users to specific pages for actions (e.g., "Go to /explore.html to browse courses")
+- If asked about specific courses, say "Use the filters on /explore.html"
+
+KNOWLEDGE_BASE:
+{{KNOWLEDGE_BASE}}`
     };
 
     // State
@@ -23,6 +34,7 @@
     let messages = loadMessages();
     let isTyping = false;
     let systemContext = null;
+    let knowledgeBase = null;
 
     // DOM Elements (will be created)
     let triggerBtn, panel, messagesContainer, input, sendBtn;
@@ -39,9 +51,23 @@
         createDOM();
         attachEvents();
         renderMessages();
-        // Fetch system context from n8n (non-blocking)
-        await loadSystemContext();
+        // Load knowledge base and system context
+        await Promise.all([loadKnowledgeBase(), loadSystemContext()]);
     }
+
+    // Load knowledge base from JSON file
+    async function loadKnowledgeBase() {
+        try {
+            const response = await fetch(CONFIG.knowledgeBaseUrl);
+            if (response.ok) {
+                knowledgeBase = await response.json();
+                console.log('[Chatbot] Knowledge base loaded');
+            }
+        } catch (error) {
+            console.warn('[Chatbot] Could not load knowledge base:', error.message);
+        }
+    }
+
 
     // Load system context from n8n webhook or cache
     async function loadSystemContext() {
@@ -250,8 +276,11 @@
             content: m.content
         }));
 
-        // Use dynamic system context from n8n or fallback
-        const systemPrompt = systemContext || CONFIG.defaultSystemPrompt;
+        // Build system prompt with knowledge base
+        let systemPrompt = systemContext || CONFIG.defaultSystemPrompt;
+        if (knowledgeBase) {
+            systemPrompt = systemPrompt.replace('{{KNOWLEDGE_BASE}}', JSON.stringify(knowledgeBase, null, 2));
+        }
 
         // Call backend proxy (API key is secure on server)
         const response = await fetch(CONFIG.apiEndpoint, {
