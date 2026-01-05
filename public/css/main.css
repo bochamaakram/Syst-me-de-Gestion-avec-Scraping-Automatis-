@@ -91,6 +91,53 @@ html {
     scroll-behavior: smooth;
 }
 
+/* ===== Custom Scrollbar - Matching App Branding ===== */
+/* WebKit Browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--surface0);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--surface2);
+    border-radius: var(--radius-full);
+    border: 2px solid var(--surface0);
+    transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--mauve);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: var(--lavender);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--surface0);
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface2) var(--surface0);
+}
+
+/* Thin scrollbar for smaller elements */
+.thin-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+    border: none;
+}
+
 body {
     font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg-main);
