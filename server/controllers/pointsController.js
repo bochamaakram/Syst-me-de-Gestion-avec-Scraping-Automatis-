@@ -55,11 +55,11 @@ exports.getHistory = async (req, res) => {
  */
 exports.purchaseCourse = async (req, res) => {
     try {
-        const { courseId } = req.params;
+        const courseId = parseInt(req.params.courseId, 10);
         const userId = req.user.id;
 
         // Validate courseId
-        if (!courseId || isNaN(courseId)) {
+        if (!courseId || isNaN(courseId) || courseId <= 0) {
             return res.status(400).json({ success: false, message: 'Invalid course ID' });
         }
 
@@ -123,7 +123,7 @@ exports.purchaseCourse = async (req, res) => {
                 user_id: userId,
                 amount: -cost,
                 type: 'course_purchase',
-                course_id: parseInt(courseId),
+                course_id: courseId,
                 description: `Enrolled in: ${course.title}`
             });
         }
@@ -133,7 +133,7 @@ exports.purchaseCourse = async (req, res) => {
             .from('purchases')
             .insert({
                 user_id: userId,
-                course_id: parseInt(courseId),
+                course_id: courseId,
                 points_paid: cost
             });
 
@@ -159,11 +159,11 @@ exports.purchaseCourse = async (req, res) => {
  */
 exports.completeCourse = async (req, res) => {
     try {
-        const { courseId } = req.params;
+        const courseId = parseInt(req.params.courseId, 10);
         const userId = req.user.id;
 
         // Validate courseId
-        if (!courseId || isNaN(courseId)) {
+        if (!courseId || isNaN(courseId) || courseId <= 0) {
             return res.status(400).json({ success: false, message: 'Invalid course ID' });
         }
 
@@ -290,7 +290,7 @@ exports.completeCourse = async (req, res) => {
             user_id: userId,
             amount: reward,
             type: 'course_complete',
-            course_id: parseInt(courseId),
+            course_id: courseId,
             description: `Completed: ${course.title}`
         });
 

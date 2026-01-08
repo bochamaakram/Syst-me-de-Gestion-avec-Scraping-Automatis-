@@ -25,7 +25,7 @@ const supabase = require('../config/database');
 exports.getMessages = async (req, res) => {
     try {
         // Extract course ID from URL parameters
-        const { courseId } = req.params;
+        const courseId = parseInt(req.params.courseId, 10);
 
         // Get current user's ID from JWT token (set by auth middleware)
         const userId = req.user.id;
@@ -105,7 +105,7 @@ exports.getMessages = async (req, res) => {
 exports.sendMessage = async (req, res) => {
     try {
         // Extract course ID from URL parameters
-        const { courseId } = req.params;
+        const courseId = parseInt(req.params.courseId, 10);
 
         // Extract message content from request body
         const { message } = req.body;
@@ -149,7 +149,7 @@ exports.sendMessage = async (req, res) => {
         const { data, error } = await supabase
             .from('course_messages')
             .insert({
-                course_id: parseInt(courseId),  // Convert to integer
+                course_id: courseId,  // Already parsed as integer
                 user_id: userId,
                 message: message.trim()         // Remove whitespace
             })

@@ -35,7 +35,7 @@ exports.getQuiz = async (req, res) => {
 
 exports.submitQuiz = async (req, res) => {
     try {
-        const { quizId } = req.params;
+        const quizId = parseInt(req.params.quizId, 10);
         const { answers } = req.body;
         const userId = req.user.id;
 
@@ -76,7 +76,7 @@ exports.submitQuiz = async (req, res) => {
 
         // Record attempt
         await supabase.from('quiz_attempts').insert({
-            user_id: userId, quiz_id: parseInt(quizId), course_id: quiz.course_id,
+            user_id: userId, quiz_id: quizId, course_id: quiz.course_id,
             score, passed, answers: JSON.stringify(answers)
         });
 
@@ -123,7 +123,7 @@ exports.getAttempts = async (req, res) => {
 
 exports.saveQuiz = async (req, res) => {
     try {
-        const { courseId } = req.params;
+        const courseId = parseInt(req.params.courseId, 10);
         const { title, passing_score, questions } = req.body;
 
         // Check existing quiz
@@ -136,7 +136,7 @@ exports.saveQuiz = async (req, res) => {
             await supabase.from('quiz_questions').delete().eq('quiz_id', quizId);
         } else {
             const { data } = await supabase.from('course_quizzes')
-                .insert({ course_id: parseInt(courseId), title, passing_score })
+                .insert({ course_id: courseId, title, passing_score })
                 .select('id')
                 .single();
             quizId = data.id;

@@ -2,9 +2,10 @@ const supabase = require('../config/database');
 
 exports.addFavorite = async (req, res) => {
     try {
+        const courseId = parseInt(req.params.courseId, 10);
         const { error } = await supabase
             .from('favorites')
-            .insert({ user_id: req.user.id, course_id: req.params.courseId });
+            .insert({ user_id: req.user.id, course_id: courseId });
 
         if (error && error.code !== '23505') throw error; // Ignore duplicate
         res.json({ success: true, message: 'Added to favorites' });
@@ -16,11 +17,12 @@ exports.addFavorite = async (req, res) => {
 
 exports.removeFavorite = async (req, res) => {
     try {
+        const courseId = parseInt(req.params.courseId, 10);
         const { error } = await supabase
             .from('favorites')
             .delete()
             .eq('user_id', req.user.id)
-            .eq('course_id', req.params.courseId);
+            .eq('course_id', courseId);
 
         if (error) throw error;
         res.json({ success: true, message: 'Removed from favorites' });

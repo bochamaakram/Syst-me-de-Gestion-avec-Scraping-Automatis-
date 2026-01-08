@@ -2,7 +2,7 @@ const supabase = require('../config/database');
 
 exports.getCourseProgress = async (req, res) => {
     try {
-        const { courseId } = req.params;
+        const courseId = parseInt(req.params.courseId, 10);
         const userId = req.user.id;
 
         // Get all lessons for course
@@ -45,7 +45,7 @@ exports.getCourseProgress = async (req, res) => {
 
 exports.markLessonComplete = async (req, res) => {
     try {
-        const { lessonId } = req.params;
+        const lessonId = parseInt(req.params.lessonId, 10);
         const userId = req.user.id;
 
         // Get lesson to find course_id
@@ -71,7 +71,7 @@ exports.markLessonComplete = async (req, res) => {
                 .eq('id', existing[0].id);
         } else {
             await supabase.from('lesson_progress').insert({
-                user_id: userId, lesson_id: parseInt(lessonId), course_id: courseId,
+                user_id: userId, lesson_id: lessonId, course_id: courseId,
                 completed: true, completed_at: new Date().toISOString()
             });
         }
@@ -96,7 +96,7 @@ exports.markLessonComplete = async (req, res) => {
 
 exports.markLessonIncomplete = async (req, res) => {
     try {
-        const { lessonId } = req.params;
+        const lessonId = parseInt(req.params.lessonId, 10);
         const userId = req.user.id;
 
         const { data: lessons } = await supabase.from('course_lessons').select('course_id').eq('id', lessonId);

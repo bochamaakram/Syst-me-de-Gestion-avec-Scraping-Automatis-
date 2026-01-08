@@ -43,7 +43,8 @@ exports.getCourses = async (req, res) => {
 
 exports.getCourse = async (req, res) => {
     try {
-        const { data: courses, error } = await supabase.from('courses').select('*').eq('id', req.params.id);
+        const courseId = parseInt(req.params.id, 10);
+        const { data: courses, error } = await supabase.from('courses').select('*').eq('id', courseId);
         if (error) throw error;
         if (!courses || courses.length === 0) {
             return res.status(404).json({ success: false, message: 'Course not found' });
@@ -93,7 +94,8 @@ exports.createCourse = async (req, res) => {
 
 exports.updateCourse = async (req, res) => {
     try {
-        const { data: courses } = await supabase.from('courses').select('*').eq('id', req.params.id).eq('user_id', req.user.id);
+        const courseId = parseInt(req.params.id, 10);
+        const { data: courses } = await supabase.from('courses').select('*').eq('id', courseId).eq('user_id', req.user.id);
         if (!courses || courses.length === 0) {
             return res.status(404).json({ success: false, message: 'Course not found or unauthorized' });
         }
@@ -114,7 +116,7 @@ exports.updateCourse = async (req, res) => {
             what_you_learn: req.body.what_you_learn ?? c.what_you_learn
         };
 
-        const { error } = await supabase.from('courses').update(updates).eq('id', req.params.id);
+        const { error } = await supabase.from('courses').update(updates).eq('id', courseId);
         if (error) throw error;
 
         res.json({ success: true, message: 'Course updated' });
@@ -126,7 +128,8 @@ exports.updateCourse = async (req, res) => {
 
 exports.deleteCourse = async (req, res) => {
     try {
-        const { data, error } = await supabase.from('courses').delete().eq('id', req.params.id).eq('user_id', req.user.id);
+        const courseId = parseInt(req.params.id, 10);
+        const { data, error } = await supabase.from('courses').delete().eq('id', courseId).eq('user_id', req.user.id);
         if (error) throw error;
 
         res.json({ success: true, message: 'Course deleted' });

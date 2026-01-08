@@ -2,10 +2,11 @@ const supabase = require('../config/database');
 
 exports.getLessons = async (req, res) => {
     try {
+        const courseId = parseInt(req.params.courseId, 10);
         const { data: lessons, error } = await supabase
             .from('course_lessons')
             .select('*')
-            .eq('course_id', req.params.courseId)
+            .eq('course_id', courseId)
             .order('order_index', { ascending: true });
 
         if (error) throw error;
@@ -18,10 +19,11 @@ exports.getLessons = async (req, res) => {
 
 exports.getLesson = async (req, res) => {
     try {
+        const lessonId = parseInt(req.params.id, 10);
         const { data: lessons, error } = await supabase
             .from('course_lessons')
             .select('*')
-            .eq('id', req.params.id);
+            .eq('id', lessonId);
 
         if (error) throw error;
         if (!lessons || lessons.length === 0) {
@@ -92,6 +94,7 @@ exports.createLesson = async (req, res) => {
 
 exports.updateLesson = async (req, res) => {
     try {
+        const lessonId = parseInt(req.params.id, 10);
         const { title, content, video_url, order_index } = req.body;
 
         const updates = {};
@@ -100,7 +103,7 @@ exports.updateLesson = async (req, res) => {
         if (video_url !== undefined) updates.video_url = video_url;
         if (order_index !== undefined) updates.order_index = order_index;
 
-        const { error } = await supabase.from('course_lessons').update(updates).eq('id', req.params.id);
+        const { error } = await supabase.from('course_lessons').update(updates).eq('id', lessonId);
         if (error) throw error;
 
         res.json({ success: true, message: 'Lesson updated' });
@@ -112,7 +115,8 @@ exports.updateLesson = async (req, res) => {
 
 exports.deleteLesson = async (req, res) => {
     try {
-        const { error } = await supabase.from('course_lessons').delete().eq('id', req.params.id);
+        const lessonId = parseInt(req.params.id, 10);
+        const { error } = await supabase.from('course_lessons').delete().eq('id', lessonId);
         if (error) throw error;
 
         res.json({ success: true, message: 'Lesson deleted' });

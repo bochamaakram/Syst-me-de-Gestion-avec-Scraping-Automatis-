@@ -2,7 +2,7 @@ const supabase = require('../config/database');
 
 exports.purchaseCourse = async (req, res) => {
     try {
-        const courseId = req.params.courseId;
+        const courseId = parseInt(req.params.courseId, 10);
         const userId = req.user.id;
 
         // Get course info
