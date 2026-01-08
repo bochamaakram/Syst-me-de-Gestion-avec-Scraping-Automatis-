@@ -376,3 +376,80 @@ function getVideoEmbedUrl(url) {
     // URL not recognized
     return null;
 }
+
+/**
+ * Mobile Bottom Navbar Auto-Hide
+ * Hides the bottom navbar after 2 seconds of inactivity
+ * Shows again on any user interaction (touch, scroll, click, etc.)
+ */
+(function initMobileNavAutoHide() {
+    let hideTimeout = null;
+    const HIDE_DELAY = 2000; // 2 seconds
+
+    function showNav() {
+        const nav = document.querySelector('.mobile-bottom-nav');
+        if (nav) {
+            nav.classList.remove('hidden');
+        }
+    }
+
+    function hideNav() {
+        const nav = document.querySelector('.mobile-bottom-nav');
+        if (nav) {
+            nav.classList.add('hidden');
+        }
+    }
+
+    function resetHideTimer() {
+        // Clear existing timeout
+        if (hideTimeout) {
+            clearTimeout(hideTimeout);
+        }
+
+        // Show the navbar
+        showNav();
+
+        // Set new timeout to hide after delay
+        hideTimeout = setTimeout(hideNav, HIDE_DELAY);
+    }
+
+    // Only run on mobile (when bottom nav is visible)
+    function isMobile() {
+        return window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!isMobile()) return;
+
+        // Activity events to track
+        const activityEvents = [
+            'touchstart',
+            'touchmove',
+            'scroll',
+            'click',
+            'mousemove',
+            'keydown'
+        ];
+
+        // Add event listeners for user activity
+        activityEvents.forEach(function (eventType) {
+            document.addEventListener(eventType, resetHideTimer, { passive: true });
+        });
+
+        // Start the initial timer
+        resetHideTimer();
+
+        // Re-check on resize
+        window.addEventListener('resize', function () {
+            if (isMobile()) {
+                resetHideTimer();
+            } else {
+                showNav();
+                if (hideTimeout) {
+                    clearTimeout(hideTimeout);
+                }
+            }
+        });
+    });
+})();

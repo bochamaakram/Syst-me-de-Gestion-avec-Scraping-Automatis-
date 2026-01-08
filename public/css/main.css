@@ -1718,6 +1718,14 @@ input[type="checkbox"]:focus {
     z-index: 1000;
     padding: 0 var(--space-md);
     padding-bottom: env(safe-area-inset-bottom);
+    /* Auto-hide animation support */
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.mobile-bottom-nav.hidden {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .mobile-bottom-nav .nav-item {
