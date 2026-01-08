@@ -6,7 +6,7 @@ let filteredCourses = [];
 let favoriteIds = [];
 let purchasedIds = [];
 let currentPage = 1;
-const limit = 6;
+const limit = 10;
 let filters = { category: '', level: '', search: '', sort: 'newest' };
 
 document.addEventListener('DOMContentLoaded', async () => {
