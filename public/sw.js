@@ -1,5 +1,5 @@
 // Knowway Service Worker
-const CACHE_NAME = 'knowway-v2'; // Bumped version to clear old cache
+const CACHE_NAME = 'knowway-v3'; // Bumped version to clear old cache and fix CSS loading
 const urlsToCache = [
     '/',
     '/index.html',
@@ -9,7 +9,6 @@ const urlsToCache = [
     '/profile.html',
     '/login.html',
     '/register.html',
-    '/css/main.css',
     '/css/output.css',
     '/manifest.json'
 ];
@@ -48,7 +47,7 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Fetch event - NETWORK-FIRST for API, CACHE-FIRST for static assets
+// Fetch event - NETWORK-FIRST for API and CSS, CACHE-FIRST for other static assets
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
@@ -67,7 +66,30 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For static assets, use cache-first strategy
+    // NETWORK-FIRST for CSS files to prevent stale styles on reload
+    if (url.pathname.endsWith('.css')) {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    // Cache the fresh CSS for offline use
+                    if (response && response.status === 200) {
+                        const responseToCache = response.clone();
+                        caches.open(CACHE_NAME)
+                            .then((cache) => {
+                                cache.put(event.request, responseToCache);
+                            });
+                    }
+                    return response;
+                })
+                .catch(() => {
+                    // Fall back to cache if network fails
+                    return caches.match(event.request);
+                })
+        );
+        return;
+    }
+
+    // For other static assets, use cache-first strategy
     event.respondWith(
         caches.match(event.request)
             .then((response) => {
