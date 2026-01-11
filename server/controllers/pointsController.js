@@ -187,7 +187,7 @@ exports.completeCourse = async (req, res) => {
             return res.status(400).json({ success: false, message: 'You have already claimed the reward for this course' });
         }
 
-        // Check if course has a quiz
+        // Check if course has a quiz WITH questions
         const { data: quizzes, error: quizError } = await supabase
             .from('course_quizzes')
             .select('id')
@@ -195,10 +195,22 @@ exports.completeCourse = async (req, res) => {
 
         if (quizError) throw quizError;
 
-        const hasQuiz = quizzes && quizzes.length > 0;
+        let hasQuiz = false;
+        if (quizzes && quizzes.length > 0) {
+            // Check if the quiz actually has questions
+            const { data: questions, error: qError } = await supabase
+                .from('quiz_questions')
+                .select('id')
+                .eq('quiz_id', quizzes[0].id)
+                .limit(1);
+
+            if (!qError && questions && questions.length > 0) {
+                hasQuiz = true;
+            }
+        }
 
         if (hasQuiz) {
-            // Course HAS a quiz - must pass it
+            // Course HAS a quiz with questions - must pass it
             if (!purchase.quiz_passed) {
                 return res.status(400).json({
                     success: false,
@@ -206,7 +218,7 @@ exports.completeCourse = async (req, res) => {
                 });
             }
         } else {
-            // Course has NO quiz - check if all lessons are completed
+            // Course has NO quiz or quiz has no questions - check if all lessons are completed
             const { data: lessons, error: lessonError } = await supabase
                 .from('course_lessons')
                 .select('id')

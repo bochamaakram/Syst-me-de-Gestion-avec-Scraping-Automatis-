@@ -1608,7 +1608,7 @@
         @apply translate-x-full transition-transform duration-300;
     }
 
-    .chat-panel.active {
+    .chat-panel.open {
         @apply translate-x-0;
     }
 
