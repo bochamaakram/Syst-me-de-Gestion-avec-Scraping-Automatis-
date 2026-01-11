@@ -1751,7 +1751,26 @@
     }
 }
 
-/* ===== Responsive ===== */
+/* ===== Tablet Responsive (1024px) ===== */
+@media (max-width: 1024px) {
+    .courses-grid {
+        @apply grid-cols-3 gap-4;
+    }
+
+    .dashboard-grid {
+        @apply grid-cols-1 gap-6;
+    }
+
+    .manage-layout {
+        @apply gap-4;
+    }
+
+    .stats-grid {
+        @apply grid-cols-3;
+    }
+}
+
+/* ===== Responsive (768px) ===== */
 @media (max-width: 768px) {
     body {
         @apply text-sm pb-[72px];
@@ -1819,7 +1838,7 @@
     }
 
     .page-hero {
-        @apply py-8 text-center;
+        @apply py-6 text-center px-4;
     }
 
     .page-hero h1 {
@@ -1867,7 +1886,7 @@
     }
 
     .panel {
-        @apply p-4 max-w-[90dvw];
+        @apply p-4 max-w-full overflow-x-hidden;
     }
 
     .search-inputs {
@@ -1904,6 +1923,174 @@
 
     .mobile-nav {
         @apply block;
+    }
+
+    /* ===== TABLE RESPONSIVENESS ===== */
+    .table-container {
+        @apply overflow-x-auto rounded-lg;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        @apply min-w-[600px];
+    }
+
+    .table th,
+    .table td {
+        @apply text-xs px-2.5 py-2.5 whitespace-nowrap;
+    }
+
+    .table th {
+        @apply text-[10px];
+    }
+
+    /* ===== COURSE EDITOR LAYOUT ===== */
+    .manage-layout {
+        @apply grid-cols-1 gap-4;
+    }
+
+    .sidebar-list {
+        @apply max-h-[180px] overflow-y-auto;
+    }
+
+    .sidebar-header {
+        @apply sticky top-0 z-10 bg-surface0 pb-2;
+    }
+
+    .editor-panel {
+        @apply p-4;
+    }
+
+    .editor-header {
+        @apply flex-col items-start gap-3;
+    }
+
+    .editor-header .btn {
+        @apply w-full;
+    }
+
+    .lesson-actions {
+        @apply flex-col gap-2;
+    }
+
+    .lesson-actions .btn {
+        @apply w-full;
+    }
+
+    .form-row {
+        @apply grid-cols-1;
+    }
+
+    /* ===== CHATBOT POSITIONING ===== */
+    .chatbot-trigger {
+        @apply bottom-[100px] right-4;
+    }
+
+    .chatbot-panel {
+        @apply w-[95vw] max-w-[380px] h-[420px] max-h-[55vh] bottom-[100px] right-2 left-2 mx-auto;
+    }
+
+    .chat-mobile-btn {
+        @apply bottom-[100px];
+    }
+
+    .chat-panel {
+        @apply w-full max-w-full h-[calc(100%-72px)];
+    }
+
+    /* ===== AUTH PAGES ===== */
+    .auth-container {
+        @apply flex-col;
+    }
+
+    .auth-left {
+        @apply hidden;
+    }
+
+    .auth-right {
+        @apply w-full min-h-screen p-4;
+    }
+
+    .auth-box {
+        @apply max-w-full w-full rounded-xl p-6;
+    }
+
+    .auth-box h2 {
+        @apply text-2xl;
+    }
+
+    /* ===== QUIZ CONTAINER ===== */
+    .quiz-container {
+        @apply p-4;
+    }
+
+    .quiz-header {
+        @apply text-center mb-6;
+    }
+
+    .quiz-header h2 {
+        @apply text-xl;
+    }
+
+    .quiz-option {
+        @apply p-3 text-sm;
+    }
+
+    .quiz-actions {
+        @apply flex-col gap-3;
+    }
+
+    .quiz-actions .btn {
+        @apply w-full;
+    }
+
+    /* ===== IN-PERSON SEARCH ===== */
+    .search-card {
+        @apply p-4;
+    }
+
+    .input-group label {
+        @apply text-sm;
+    }
+
+    .quick-tags {
+        @apply flex-wrap gap-2;
+    }
+
+    .quick-tag {
+        @apply text-xs px-2.5 py-1.5;
+    }
+
+    /* ===== PAGINATION ===== */
+    .pagination {
+        @apply flex-wrap justify-center gap-2;
+    }
+
+    .pagination-btn,
+    .pagination .btn {
+        @apply px-3 py-2 text-sm;
+    }
+
+    /* ===== ACCESS DENIED ===== */
+    .access-denied {
+        @apply p-6 text-center;
+    }
+
+    /* ===== LESSON CONTENT ===== */
+    .lesson-content {
+        @apply p-4;
+    }
+
+    .lesson-navigation {
+        @apply flex-col gap-3;
+    }
+
+    .nav-btn {
+        @apply w-full justify-center text-center;
+    }
+
+    .nav-btn-title {
+        @apply text-sm;
     }
 }
 
